@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { NetWorthChart } from '@/components/charts/NetWorthChart';
+import { LiabilitiesChart } from '@/components/charts/LiabilitiesChart';
 import { SpendingChart } from '@/components/charts/SpendingChart';
 import { SourceBreakdownChart } from '@/components/charts/SourceBreakdownChart';
 import { useNetWorthBreakdown } from '@/hooks/useAssets';
@@ -30,6 +31,11 @@ export default function Dashboard() {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
+  };
+
+  // Handle category click from either chart
+  const handleCategoryClick = (category: string) => {
+    setSelectedCategory(category);
   };
 
   return (
@@ -104,10 +110,13 @@ export default function Dashboard() {
 
       {/* Charts Section */}
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Net Worth Breakdown */}
+        {/* Assets Breakdown */}
         <Card>
           <CardHeader>
-            <CardTitle>Net Worth Breakdown</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-green-500" />
+              Assets Breakdown
+            </CardTitle>
             <CardDescription>
               Click on a category to see source breakdown
             </CardDescription>
@@ -120,7 +129,32 @@ export default function Dashboard() {
             ) : (
               <NetWorthChart
                 data={breakdown}
-                onCategoryClick={setSelectedCategory}
+                onCategoryClick={handleCategoryClick}
+              />
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Liabilities Breakdown */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingDown className="h-5 w-5 text-red-500" />
+              Liabilities Breakdown
+            </CardTitle>
+            <CardDescription>
+              Click on a category to see source breakdown
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {assetsLoading ? (
+              <div className="flex h-[250px] items-center justify-center">
+                Loading...
+              </div>
+            ) : (
+              <LiabilitiesChart
+                data={breakdown}
+                onCategoryClick={handleCategoryClick}
               />
             )}
           </CardContent>
@@ -135,7 +169,7 @@ export default function Dashboard() {
             <CardDescription>
               {selectedCategory
                 ? 'Breakdown by source/platform'
-                : 'Select a category from the pie chart'}
+                : 'Select a category from the charts above'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -148,14 +182,14 @@ export default function Dashboard() {
               <div className="flex h-[250px] items-center justify-center text-muted-foreground">
                 {assetsLoading
                   ? 'Loading...'
-                  : 'Click a category in the pie chart to see details'}
+                  : 'Click a category in the charts above to see details'}
               </div>
             )}
           </CardContent>
         </Card>
 
         {/* Monthly Spending */}
-        <Card className="md:col-span-2">
+        <Card>
           <CardHeader>
             <CardTitle>Spending by Category</CardTitle>
             <CardDescription>

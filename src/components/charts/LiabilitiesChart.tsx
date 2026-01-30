@@ -3,19 +3,19 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { NetWorthBreakdown } from '@/lib/supabase/types';
 
-interface NetWorthChartProps {
+interface LiabilitiesChartProps {
   data: NetWorthBreakdown[];
   onCategoryClick?: (category: string) => void;
 }
 
-export function NetWorthChart({ data, onCategoryClick }: NetWorthChartProps) {
-  // Filter out zero values and liabilities - assets only
-  const chartData = data.filter((item) => item.value > 0 && item.type !== 'liability');
+export function LiabilitiesChart({ data, onCategoryClick }: LiabilitiesChartProps) {
+  // Filter for liabilities only
+  const chartData = data.filter((item) => item.value > 0 && item.type === 'liability');
 
   if (chartData.length === 0) {
     return (
-      <div className="flex h-[300px] items-center justify-center text-muted-foreground">
-        No asset data to display
+      <div className="flex h-[250px] items-center justify-center text-muted-foreground">
+        No liabilities to display
       </div>
     );
   }
@@ -42,15 +42,18 @@ export function NetWorthChart({ data, onCategoryClick }: NetWorthChartProps) {
     return null;
   };
 
+  // Use different shades of red for liabilities
+  const COLORS = ['#ef4444', '#dc2626', '#b91c1c', '#991b1b', '#7f1d1d'];
+
   return (
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={250}>
       <PieChart>
         <Pie
           data={chartData}
           cx="50%"
           cy="50%"
-          innerRadius={60}
-          outerRadius={100}
+          innerRadius={50}
+          outerRadius={80}
           paddingAngle={2}
           dataKey="value"
           nameKey="category"
@@ -58,7 +61,7 @@ export function NetWorthChart({ data, onCategoryClick }: NetWorthChartProps) {
           style={{ cursor: onCategoryClick ? 'pointer' : 'default' }}
         >
           {chartData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.color} />
+            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
           ))}
         </Pie>
         <Tooltip content={<CustomTooltip />} />
