@@ -7,6 +7,7 @@ import {
   AssetCategory,
   AssetSource,
   CreateAsset,
+  CreateAssetCategory,
   CreateAssetSource,
   UpdateAsset,
   NetWorthBreakdown,
@@ -40,7 +41,49 @@ export function useAssetCategories() {
     fetchCategories();
   }, [fetchCategories]);
 
-  return { categories, loading, error, refetch: fetchCategories };
+  const createCategory = async (category: CreateAssetCategory) => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('asset_categories')
+      .insert(category)
+      .select()
+      .single();
+
+    if (error) throw error;
+    await fetchCategories();
+    return data;
+  };
+
+  const updateCategory = async (id: string, updates: Partial<CreateAssetCategory>) => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('asset_categories')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    await fetchCategories();
+    return data;
+  };
+
+  const deleteCategory = async (id: string) => {
+    const supabase = createClient();
+    const { error } = await supabase.from('asset_categories').delete().eq('id', id);
+    if (error) throw error;
+    await fetchCategories();
+  };
+
+  return { 
+    categories, 
+    loading, 
+    error, 
+    refetch: fetchCategories,
+    createCategory,
+    updateCategory,
+    deleteCategory,
+  };
 }
 
 export function useAssetSources(categoryId?: string) {
