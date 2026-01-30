@@ -20,7 +20,7 @@ interface NetWorthTrendChartProps {
 export function NetWorthTrendChart({ data }: NetWorthTrendChartProps) {
   if (data.length === 0) {
     return (
-      <div className="flex h-[300px] items-center justify-center text-muted-foreground">
+      <div className="flex h-full items-center justify-center text-muted-foreground">
         No history data yet. Take your first snapshot to start tracking.
       </div>
     );
@@ -73,7 +73,7 @@ export function NetWorthTrendChart({ data }: NetWorthTrendChartProps) {
   };
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height="100%">
       <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
         <XAxis 
