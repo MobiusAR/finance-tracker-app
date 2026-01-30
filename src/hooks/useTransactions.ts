@@ -228,3 +228,83 @@ export function useSpendingSummary(months: number = 1) {
 
   return { summary, totalSpending, loading, error, refetch: fetchSummary };
 }
+
+export interface BudgetStatus {
+  category: SpendingCategory;
+  spent: number;
+  budget: number | null;
+  remaining: number | null;
+  percentUsed: number | null;
+  isOverBudget: boolean;
+}
+
+export function useBudgetStatus() {
+  const [budgetStatus, setBudgetStatus] = useState<BudgetStatus[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchBudgetStatus = useCallback(async () => {
+    try {
+      setLoading(true);
+      const supabase = createClient();
+      
+      // Get current month's date range
+      const startDate = format(startOfMonth(new Date()), 'yyyy-MM-dd');
+      const endDate = format(endOfMonth(new Date()), 'yyyy-MM-dd');
+
+      // Fetch categories and transactions in parallel
+      const [categoriesResult, transactionsResult] = await Promise.all([
+        supabase.from('spending_categories').select('*').order('name'),
+        supabase
+          .from('transactions')
+          .select('category_id, amount')
+          .gte('transaction_date', startDate)
+          .lte('transaction_date', endDate),
+      ]);
+
+      if (categoriesResult.error) throw categoriesResult.error;
+      if (transactionsResult.error) throw transactionsResult.error;
+
+      const categories = categoriesResult.data || [];
+      const transactions = transactionsResult.data || [];
+
+      // Calculate spent per category
+      const spentByCategory: Record<string, number> = {};
+      transactions.forEach((t) => {
+        if (t.category_id) {
+          spentByCategory[t.category_id] = (spentByCategory[t.category_id] || 0) + Number(t.amount);
+        }
+      });
+
+      // Build budget status for each category
+      const status: BudgetStatus[] = categories.map((category) => {
+        const spent = spentByCategory[category.id] || 0;
+        const budget = category.budget_amount;
+        const remaining = budget ? budget - spent : null;
+        const percentUsed = budget ? (spent / budget) * 100 : null;
+        const isOverBudget = budget ? spent > budget : false;
+
+        return {
+          category,
+          spent,
+          budget,
+          remaining,
+          percentUsed,
+          isOverBudget,
+        };
+      });
+
+      setBudgetStatus(status);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch budget status');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchBudgetStatus();
+  }, [fetchBudgetStatus]);
+
+  return { budgetStatus, loading, error, refetch: fetchBudgetStatus };
+}
