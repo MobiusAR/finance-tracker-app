@@ -9,15 +9,15 @@ interface HeaderProps {
 
 export function Header({ title, description }: HeaderProps) {
   return (
-    <header className="mb-8">
-      <div className="flex items-center justify-between">
+    <header className="mb-4 md:mb-8">
+      <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{title}</h1>
           {description && (
-            <p className="mt-1 text-muted-foreground">{description}</p>
+            <p className="text-sm text-muted-foreground md:mt-1">{description}</p>
           )}
         </div>
-        <div className="text-right text-sm text-muted-foreground">
+        <div className="hidden text-right text-sm text-muted-foreground md:block">
           {format(new Date(), 'EEEE, MMMM d, yyyy')}
         </div>
       </div>

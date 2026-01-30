@@ -46,7 +46,7 @@ export default function Dashboard() {
     try {
       setSnapshotLoading(true);
       await takeSnapshot();
-      toast.success('Snapshot saved! Your net worth history has been updated.');
+      toast.success('Snapshot saved!');
       refetchHistory();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to take snapshot');
@@ -63,9 +63,6 @@ export default function Dashboard() {
   const netWorthChange = lastSnapshot && previousSnapshot
     ? lastSnapshot.net_worth - previousSnapshot.net_worth
     : null;
-  const netWorthChangePercent = lastSnapshot && previousSnapshot && previousSnapshot.net_worth !== 0
-    ? ((lastSnapshot.net_worth - previousSnapshot.net_worth) / Math.abs(previousSnapshot.net_worth)) * 100
-    : null;
 
   return (
     <div>
@@ -74,66 +71,66 @@ export default function Dashboard() {
         description="Overview of your financial health"
       />
 
-      {/* Summary Cards */}
-      <div className="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Summary Cards - 2x2 grid on mobile, 4 cols on desktop */}
+      <div className="mb-4 grid grid-cols-2 gap-3 md:mb-6 md:gap-4 lg:grid-cols-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Net Worth</CardTitle>
-            <Wallet className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
+            <CardTitle className="text-xs font-medium md:text-sm">Net Worth</CardTitle>
+            <Wallet className="h-3 w-3 text-muted-foreground md:h-4 md:w-4" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <div className="text-lg font-bold md:text-2xl">
               {assetsLoading ? '...' : formatCurrency(totalNetWorth)}
             </div>
             {netWorthChange !== null && (
-              <p className={`text-xs ${netWorthChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {netWorthChange >= 0 ? '+' : ''}{formatCurrency(netWorthChange)} from last snapshot
+              <p className={`text-[10px] md:text-xs ${netWorthChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {netWorthChange >= 0 ? '+' : ''}{formatCurrency(netWorthChange)}
               </p>
             )}
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Assets</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-500" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
+            <CardTitle className="text-xs font-medium md:text-sm">Assets</CardTitle>
+            <TrendingUp className="h-3 w-3 text-green-500 md:h-4 md:w-4" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <div className="text-lg font-bold text-green-600 md:text-2xl">
               {assetsLoading ? '...' : formatCurrency(totalAssets)}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Investments + Cash + Property
+            <p className="hidden text-xs text-muted-foreground md:block">
+              Investments + Cash
             </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Liabilities</CardTitle>
-            <TrendingDown className="h-4 w-4 text-red-500" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
+            <CardTitle className="text-xs font-medium md:text-sm">Liabilities</CardTitle>
+            <TrendingDown className="h-3 w-3 text-red-500 md:h-4 md:w-4" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <div className="text-lg font-bold text-red-600 md:text-2xl">
               {assetsLoading ? '...' : formatCurrency(totalLiabilities)}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Loans & other liabilities
+            <p className="hidden text-xs text-muted-foreground md:block">
+              Loans & debts
             </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Spending</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
+            <CardTitle className="text-xs font-medium md:text-sm">Spending</CardTitle>
+            <CreditCard className="h-3 w-3 text-muted-foreground md:h-4 md:w-4" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <div className="text-lg font-bold md:text-2xl">
               {spendingLoading ? '...' : formatCurrency(totalSpending)}
             </div>
-            <p className="text-xs text-muted-foreground">
-              This month&apos;s expenses
+            <p className="hidden text-xs text-muted-foreground md:block">
+              This month
             </p>
           </CardContent>
         </Card>
@@ -141,58 +138,59 @@ export default function Dashboard() {
 
       {/* Tabbed Content */}
       <Tabs defaultValue="history" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="history" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-4 h-auto">
+          <TabsTrigger value="history" className="flex flex-col items-center gap-1 py-2 px-1 md:flex-row md:gap-2 md:py-2 md:px-4">
             <History className="h-4 w-4" />
-            <span className="hidden sm:inline">Net Worth History</span>
-            <span className="sm:hidden">History</span>
+            <span className="text-[10px] md:text-sm">History</span>
           </TabsTrigger>
-          <TabsTrigger value="assets" className="flex items-center gap-2">
+          <TabsTrigger value="assets" className="flex flex-col items-center gap-1 py-2 px-1 md:flex-row md:gap-2 md:py-2 md:px-4">
             <TrendingUp className="h-4 w-4" />
-            <span>Assets</span>
+            <span className="text-[10px] md:text-sm">Assets</span>
           </TabsTrigger>
-          <TabsTrigger value="liabilities" className="flex items-center gap-2">
+          <TabsTrigger value="liabilities" className="flex flex-col items-center gap-1 py-2 px-1 md:flex-row md:gap-2 md:py-2 md:px-4">
             <TrendingDown className="h-4 w-4" />
-            <span>Liabilities</span>
+            <span className="text-[10px] md:text-sm">Liabilities</span>
           </TabsTrigger>
-          <TabsTrigger value="spending" className="flex items-center gap-2">
+          <TabsTrigger value="spending" className="flex flex-col items-center gap-1 py-2 px-1 md:flex-row md:gap-2 md:py-2 md:px-4">
             <Receipt className="h-4 w-4" />
-            <span>Spending</span>
+            <span className="text-[10px] md:text-sm">Spending</span>
           </TabsTrigger>
         </TabsList>
 
         {/* Net Worth History Tab */}
         <TabsContent value="history">
           <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
+            <CardHeader className="p-4 md:p-6">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <History className="h-5 w-5" />
+                  <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                    <History className="h-4 w-4 md:h-5 md:w-5" />
                     Net Worth History
                   </CardTitle>
-                  <CardDescription>
-                    Track your financial progress over time
+                  <CardDescription className="text-xs md:text-sm">
                     {lastSnapshot && (
-                      <span className="ml-2">
-                        • Last snapshot: {format(new Date(lastSnapshot.snapshot_date), 'MMM d, yyyy')}
-                      </span>
+                      <span>Last: {format(new Date(lastSnapshot.snapshot_date), 'MMM d, yyyy')}</span>
                     )}
                   </CardDescription>
                 </div>
-                <Button onClick={handleTakeSnapshot} disabled={snapshotLoading || assetsLoading}>
+                <Button 
+                  onClick={handleTakeSnapshot} 
+                  disabled={snapshotLoading || assetsLoading}
+                  size="sm"
+                  className="w-full md:w-auto"
+                >
                   <Camera className="mr-2 h-4 w-4" />
                   {snapshotLoading ? 'Saving...' : 'Take Snapshot'}
                 </Button>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
               {historyLoading ? (
-                <div className="flex h-[400px] items-center justify-center">
+                <div className="flex h-[250px] items-center justify-center md:h-[400px]">
                   Loading history...
                 </div>
               ) : (
-                <div className="h-[400px]">
+                <div className="h-[250px] md:h-[400px]">
                   <NetWorthTrendChart data={history} />
                 </div>
               )}
@@ -202,24 +200,24 @@ export default function Dashboard() {
 
         {/* Assets Tab */}
         <TabsContent value="assets">
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="space-y-4 md:grid md:grid-cols-2 md:gap-6 md:space-y-0">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <PieChart className="h-5 w-5 text-green-500" />
+              <CardHeader className="p-4 md:p-6">
+                <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                  <PieChart className="h-4 w-4 text-green-500 md:h-5 md:w-5" />
                   Assets Breakdown
                 </CardTitle>
-                <CardDescription>
-                  Click on a category to see source breakdown
+                <CardDescription className="text-xs md:text-sm">
+                  Tap a category to see details
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
                 {assetsLoading ? (
-                  <div className="flex h-[350px] items-center justify-center">
+                  <div className="flex h-[250px] items-center justify-center md:h-[350px]">
                     Loading...
                   </div>
                 ) : (
-                  <div className="h-[350px]">
+                  <div className="h-[250px] md:h-[350px]">
                     <NetWorthChart
                       data={breakdown}
                       onCategoryClick={setSelectedAssetCategory}
@@ -230,29 +228,29 @@ export default function Dashboard() {
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>
-                  {selectedAssetCategory ? `${selectedAssetCategory} Sources` : 'Source Breakdown'}
+              <CardHeader className="p-4 md:p-6">
+                <CardTitle className="text-base md:text-lg">
+                  {selectedAssetCategory ? `${selectedAssetCategory}` : 'Source Breakdown'}
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs md:text-sm">
                   {selectedAssetCategory
-                    ? 'Breakdown by source/platform'
-                    : 'Select a category from the pie chart'}
+                    ? 'By source/platform'
+                    : 'Select a category above'}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
                 {selectedAssetCategory && sourceBreakdown[selectedAssetCategory] ? (
-                  <div className="h-[350px]">
+                  <div className="h-[250px] md:h-[350px]">
                     <SourceBreakdownChart
                       data={sourceBreakdown[selectedAssetCategory]}
                       category={selectedAssetCategory}
                     />
                   </div>
                 ) : (
-                  <div className="flex h-[350px] items-center justify-center text-muted-foreground">
+                  <div className="flex h-[250px] items-center justify-center text-sm text-muted-foreground md:h-[350px]">
                     {assetsLoading
                       ? 'Loading...'
-                      : 'Click a category in the pie chart to see details'}
+                      : 'Tap a category to see breakdown'}
                   </div>
                 )}
               </CardContent>
@@ -262,24 +260,24 @@ export default function Dashboard() {
 
         {/* Liabilities Tab */}
         <TabsContent value="liabilities">
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="space-y-4 md:grid md:grid-cols-2 md:gap-6 md:space-y-0">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <PieChart className="h-5 w-5 text-red-500" />
+              <CardHeader className="p-4 md:p-6">
+                <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                  <PieChart className="h-4 w-4 text-red-500 md:h-5 md:w-5" />
                   Liabilities Breakdown
                 </CardTitle>
-                <CardDescription>
-                  Click on a category to see source breakdown
+                <CardDescription className="text-xs md:text-sm">
+                  Tap a category to see details
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
                 {assetsLoading ? (
-                  <div className="flex h-[350px] items-center justify-center">
+                  <div className="flex h-[250px] items-center justify-center md:h-[350px]">
                     Loading...
                   </div>
                 ) : (
-                  <div className="h-[350px]">
+                  <div className="h-[250px] md:h-[350px]">
                     <LiabilitiesChart
                       data={breakdown}
                       onCategoryClick={setSelectedLiabilityCategory}
@@ -290,29 +288,29 @@ export default function Dashboard() {
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>
-                  {selectedLiabilityCategory ? `${selectedLiabilityCategory} Sources` : 'Source Breakdown'}
+              <CardHeader className="p-4 md:p-6">
+                <CardTitle className="text-base md:text-lg">
+                  {selectedLiabilityCategory ? `${selectedLiabilityCategory}` : 'Source Breakdown'}
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs md:text-sm">
                   {selectedLiabilityCategory
-                    ? 'Breakdown by source/platform'
-                    : 'Select a category from the pie chart'}
+                    ? 'By source/platform'
+                    : 'Select a category above'}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
                 {selectedLiabilityCategory && sourceBreakdown[selectedLiabilityCategory] ? (
-                  <div className="h-[350px]">
+                  <div className="h-[250px] md:h-[350px]">
                     <SourceBreakdownChart
                       data={sourceBreakdown[selectedLiabilityCategory]}
                       category={selectedLiabilityCategory}
                     />
                   </div>
                 ) : (
-                  <div className="flex h-[350px] items-center justify-center text-muted-foreground">
+                  <div className="flex h-[250px] items-center justify-center text-sm text-muted-foreground md:h-[350px]">
                     {assetsLoading
                       ? 'Loading...'
-                      : 'Click a category in the pie chart to see details'}
+                      : 'Tap a category to see breakdown'}
                   </div>
                 )}
               </CardContent>
@@ -323,22 +321,22 @@ export default function Dashboard() {
         {/* Spending Tab */}
         <TabsContent value="spending">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Receipt className="h-5 w-5" />
+            <CardHeader className="p-4 md:p-6">
+              <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                <Receipt className="h-4 w-4 md:h-5 md:w-5" />
                 Spending by Category
               </CardTitle>
-              <CardDescription>
-                This month&apos;s expenses breakdown
+              <CardDescription className="text-xs md:text-sm">
+                This month&apos;s expenses
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
               {spendingLoading ? (
-                <div className="flex h-[400px] items-center justify-center">
+                <div className="flex h-[300px] items-center justify-center md:h-[400px]">
                   Loading...
                 </div>
               ) : (
-                <div className="h-[400px]">
+                <div className="h-[300px] md:h-[400px]">
                   <SpendingChart data={summary} />
                 </div>
               )}
