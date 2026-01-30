@@ -9,13 +9,13 @@ interface NetWorthChartProps {
 }
 
 export function NetWorthChart({ data, onCategoryClick }: NetWorthChartProps) {
-  // Filter out zero values and liabilities for the pie chart
-  const chartData = data.filter((item) => item.value > 0 && item.type !== 'liability');
+  // Filter out zero values, include all categories (assets and liabilities)
+  const chartData = data.filter((item) => item.value > 0);
 
   if (chartData.length === 0) {
     return (
       <div className="flex h-[300px] items-center justify-center text-muted-foreground">
-        No asset data to display
+        No data to display
       </div>
     );
   }
