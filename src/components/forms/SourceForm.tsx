@@ -126,12 +126,12 @@ export function SourceForm({
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:gap-0">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Creating...' : 'Create Source'}
+            <Button type="submit" disabled={loading} className="w-full sm:w-auto">
+              {loading ? 'Creating...' : 'Create'}
             </Button>
           </DialogFooter>
         </form>

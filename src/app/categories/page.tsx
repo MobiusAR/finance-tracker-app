@@ -88,128 +88,139 @@ export default function CategoriesPage() {
       />
 
       {/* Budget Summary Cards */}
-      <div className="mb-6 grid gap-4 md:grid-cols-3">
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:mb-6 sm:gap-4 md:grid-cols-3">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Monthly Budget</CardTitle>
+          <CardHeader className="p-3 pb-1 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs font-medium sm:text-sm">Monthly Budget</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalBudget)}</div>
-            <p className="text-xs text-muted-foreground">
-              Across {budgetStatus.filter((s) => s.budget).length} categories
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <div className="text-lg font-bold sm:text-2xl">{formatCurrency(totalBudget)}</div>
+            <p className="text-[10px] text-muted-foreground sm:text-xs">
+              {budgetStatus.filter((s) => s.budget).length} categories
             </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Spent This Month</CardTitle>
+          <CardHeader className="p-3 pb-1 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs font-medium sm:text-sm">Spent</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalSpent)}</div>
-            <p className="text-xs text-muted-foreground">
-              {format(new Date(), 'MMMM yyyy')}
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <div className="text-lg font-bold sm:text-2xl">{formatCurrency(totalSpent)}</div>
+            <p className="text-[10px] text-muted-foreground sm:text-xs">
+              {format(new Date(), 'MMM yyyy')}
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Budget Status</CardTitle>
+        <Card className="col-span-2 md:col-span-1">
+          <CardHeader className="p-3 pb-1 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs font-medium sm:text-sm">Status</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
             {overBudgetCount > 0 ? (
               <div className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-red-500" />
-                <span className="text-2xl font-bold text-red-600">{overBudgetCount}</span>
-                <span className="text-sm text-muted-foreground">over budget</span>
+                <AlertTriangle className="h-4 w-4 text-red-500 sm:h-5 sm:w-5" />
+                <span className="text-lg font-bold text-red-600 sm:text-2xl">{overBudgetCount}</span>
+                <span className="text-xs text-muted-foreground sm:text-sm">over budget</span>
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <span className="text-2xl font-bold text-green-600">All good!</span>
+                <CheckCircle className="h-4 w-4 text-green-500 sm:h-5 sm:w-5" />
+                <span className="text-lg font-bold text-green-600 sm:text-2xl">All good!</span>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
 
-      <div className="mb-6 flex justify-end">
+      <div className="mb-4 flex items-center justify-between sm:mb-6 sm:justify-end">
+        <span className="text-sm font-medium text-muted-foreground sm:hidden">
+          {budgetStatus.length} categories
+        </span>
         <Button
+          size="sm"
+          className="sm:size-default"
           onClick={() => {
             setEditingCategory(null);
             setFormOpen(true);
           }}
         >
-          <Plus className="mr-2 h-4 w-4" />
-          Add Category
+          <Plus className="mr-1 h-4 w-4 sm:mr-2" />
+          <span className="sm:hidden">Add</span>
+          <span className="hidden sm:inline">Add Category</span>
         </Button>
       </div>
 
       {loading ? (
         <Card>
-          <CardContent className="flex h-64 items-center justify-center">
+          <CardContent className="flex h-40 items-center justify-center sm:h-64">
             Loading categories...
           </CardContent>
         </Card>
       ) : budgetStatus.length === 0 ? (
         <Card>
-          <CardContent className="flex h-64 flex-col items-center justify-center gap-4">
-            <p className="text-muted-foreground">No categories found</p>
-            <Button onClick={() => setFormOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Your First Category
+          <CardContent className="flex h-40 flex-col items-center justify-center gap-3 sm:h-64 sm:gap-4">
+            <p className="text-sm text-muted-foreground">No categories found</p>
+            <Button size="sm" onClick={() => setFormOpen(true)}>
+              <Plus className="mr-1 h-4 w-4" />
+              Create Category
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
           {budgetStatus.map(({ category, spent, budget, remaining, percentUsed, isOverBudget }) => (
             <Card key={category.id} className={isOverBudget ? 'border-red-300 bg-red-50/50' : ''}>
-              <CardHeader className="pb-2">
+              <CardHeader className="p-3 pb-2 sm:p-6 sm:pb-2">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 min-w-0 flex-1 sm:gap-3">
                     <div
-                      className="h-4 w-4 rounded-full"
+                      className="h-3 w-3 shrink-0 rounded-full sm:h-4 sm:w-4"
                       style={{ backgroundColor: category.color }}
                     />
-                    <CardTitle className="text-base">{category.name}</CardTitle>
+                    <CardTitle className="text-sm truncate sm:text-base">{category.name}</CardTitle>
                     {isOverBudget && (
-                      <Badge variant="destructive" className="text-xs">
+                      <Badge variant="destructive" className="hidden text-xs sm:flex">
                         <AlertTriangle className="mr-1 h-3 w-3" />
-                        Over Budget
+                        Over
                       </Badge>
                     )}
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleEditCategory(category)}>
-                        <Pencil className="mr-2 h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleDeleteCategory(category.id)}
-                        className="text-red-600"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <div className="flex items-center gap-1">
+                    {isOverBudget && (
+                      <AlertTriangle className="h-4 w-4 text-red-500 sm:hidden" />
+                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleEditCategory(category)}>
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteCategory(category.id)}
+                          className="text-red-600"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
                 {budget ? (
                   <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
+                    <div className="flex flex-wrap justify-between gap-x-2 text-xs sm:text-sm">
                       <span>
                         <span className="font-medium">{formatCurrency(spent)}</span>
-                        <span className="text-muted-foreground"> of {formatCurrency(budget)}</span>
+                        <span className="text-muted-foreground"> / {formatCurrency(budget)}</span>
                       </span>
                       <span className={isOverBudget ? 'text-red-600 font-medium' : 'text-muted-foreground'}>
                         {remaining !== null && remaining >= 0
@@ -220,27 +231,24 @@ export default function CategoriesPage() {
                     <div className="relative">
                       <Progress 
                         value={Math.min(percentUsed || 0, 100)} 
-                        className="h-2"
+                        className="h-1.5 sm:h-2"
                       />
-                      {/* Overlay for over-budget indicator */}
                       <div 
-                        className={`absolute inset-0 h-2 rounded-full ${getProgressColor(percentUsed)}`}
+                        className={`absolute inset-0 h-1.5 rounded-full sm:h-2 ${getProgressColor(percentUsed)}`}
                         style={{ width: `${Math.min(percentUsed || 0, 100)}%` }}
                       />
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-[10px] text-muted-foreground sm:text-xs">
                       {percentUsed !== null ? `${Math.round(percentUsed)}% used` : ''}
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>
-                        <span className="font-medium">{formatCurrency(spent)}</span>
-                        <span className="text-muted-foreground"> spent this month</span>
-                      </span>
+                  <div className="space-y-1">
+                    <div className="text-xs sm:text-sm">
+                      <span className="font-medium">{formatCurrency(spent)}</span>
+                      <span className="text-muted-foreground"> spent</span>
                     </div>
-                    <p className="text-xs text-muted-foreground">No budget set</p>
+                    <p className="text-[10px] text-muted-foreground sm:text-xs">No budget set</p>
                   </div>
                 )}
               </CardContent>
