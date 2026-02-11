@@ -73,10 +73,10 @@ export default function Dashboard() {
 
       {/* Summary Cards - 2x2 grid on mobile, 4 cols on desktop */}
       <div className="mb-4 grid grid-cols-2 gap-3 md:mb-6 md:gap-4 lg:grid-cols-4">
-        <Card>
+        <Card className="border-l-4 border-l-blue-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
             <CardTitle className="text-xs font-medium md:text-sm">Net Worth</CardTitle>
-            <Wallet className="h-3 w-3 text-muted-foreground md:h-4 md:w-4" />
+            <Wallet className="h-3 w-3 text-blue-500 md:h-4 md:w-4" />
           </CardHeader>
           <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
             <div className="text-lg font-bold md:text-2xl">
@@ -90,7 +90,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-green-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
             <CardTitle className="text-xs font-medium md:text-sm">Assets</CardTitle>
             <TrendingUp className="h-3 w-3 text-green-500 md:h-4 md:w-4" />
@@ -105,7 +105,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-red-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
             <CardTitle className="text-xs font-medium md:text-sm">Liabilities</CardTitle>
             <TrendingDown className="h-3 w-3 text-red-500 md:h-4 md:w-4" />
@@ -120,10 +120,10 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-orange-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
             <CardTitle className="text-xs font-medium md:text-sm">Spending</CardTitle>
-            <CreditCard className="h-3 w-3 text-muted-foreground md:h-4 md:w-4" />
+            <CreditCard className="h-3 w-3 text-orange-500 md:h-4 md:w-4" />
           </CardHeader>
           <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
             <div className="text-lg font-bold md:text-2xl">
@@ -139,21 +139,21 @@ export default function Dashboard() {
       {/* Tabbed Content */}
       <Tabs defaultValue="history" className="space-y-4">
         <TabsList className="grid w-full grid-cols-4 h-auto">
-          <TabsTrigger value="history" className="flex flex-col items-center gap-1 py-2 px-1 md:flex-row md:gap-2 md:py-2 md:px-4">
+          <TabsTrigger value="history" className="flex flex-col items-center gap-0.5 py-2 px-1 md:flex-row md:gap-2 md:py-2 md:px-4">
             <History className="h-4 w-4" />
-            <span className="text-[10px] md:text-sm">History</span>
+            <span className="text-xs md:text-sm">History</span>
           </TabsTrigger>
-          <TabsTrigger value="assets" className="flex flex-col items-center gap-1 py-2 px-1 md:flex-row md:gap-2 md:py-2 md:px-4">
+          <TabsTrigger value="assets" className="flex flex-col items-center gap-0.5 py-2 px-1 md:flex-row md:gap-2 md:py-2 md:px-4">
             <TrendingUp className="h-4 w-4" />
-            <span className="text-[10px] md:text-sm">Assets</span>
+            <span className="text-xs md:text-sm">Assets</span>
           </TabsTrigger>
-          <TabsTrigger value="liabilities" className="flex flex-col items-center gap-1 py-2 px-1 md:flex-row md:gap-2 md:py-2 md:px-4">
+          <TabsTrigger value="liabilities" className="flex flex-col items-center gap-0.5 py-2 px-1 md:flex-row md:gap-2 md:py-2 md:px-4">
             <TrendingDown className="h-4 w-4" />
-            <span className="text-[10px] md:text-sm">Liabilities</span>
+            <span className="text-xs md:text-sm">Liabilities</span>
           </TabsTrigger>
-          <TabsTrigger value="spending" className="flex flex-col items-center gap-1 py-2 px-1 md:flex-row md:gap-2 md:py-2 md:px-4">
+          <TabsTrigger value="spending" className="flex flex-col items-center gap-0.5 py-2 px-1 md:flex-row md:gap-2 md:py-2 md:px-4">
             <Receipt className="h-4 w-4" />
-            <span className="text-[10px] md:text-sm">Spending</span>
+            <span className="text-xs md:text-sm">Spending</span>
           </TabsTrigger>
         </TabsList>
 
@@ -330,15 +330,13 @@ export default function Dashboard() {
                 This month&apos;s expenses
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
+            <CardContent className="p-4 pt-0 md:p-6 md:pt-0 overflow-hidden">
               {spendingLoading ? (
-                <div className="flex h-[300px] items-center justify-center md:h-[400px]">
+                <div className="flex h-[200px] items-center justify-center md:h-[300px]">
                   Loading...
                 </div>
               ) : (
-                <div className="h-[300px] md:h-[400px]">
-                  <SpendingChart data={summary} />
-                </div>
+                <SpendingChart data={summary} />
               )}
             </CardContent>
           </Card>

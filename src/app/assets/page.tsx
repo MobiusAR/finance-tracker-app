@@ -191,14 +191,17 @@ export default function AssetsPage() {
           </div>
 
           {/* Summary */}
-          <Card className="mb-4">
+          <Card className="mb-4 border-l-4 border-l-emerald-500">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Value</p>
-                  <p className="text-2xl font-bold">{formatCurrency(Math.abs(totalValue))}</p>
+                  <p className="text-xs text-muted-foreground sm:text-sm">Total Value</p>
+                  <p className="text-xl font-bold sm:text-2xl">{formatCurrency(Math.abs(totalValue))}</p>
                 </div>
-                <p className="text-sm text-muted-foreground">{filteredAssets.length} assets</p>
+                <div className="text-right">
+                  <p className="text-lg font-semibold sm:text-xl">{filteredAssets.length}</p>
+                  <p className="text-xs text-muted-foreground">assets</p>
+                </div>
               </div>
             </CardContent>
           </Card>

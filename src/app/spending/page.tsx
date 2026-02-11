@@ -170,7 +170,7 @@ export default function SpendingPage() {
 
       {/* Summary Cards */}
       <div className="mb-4 grid gap-3 sm:mb-6 sm:gap-4 md:grid-cols-2">
-        <Card>
+        <Card className="border-l-4 border-l-orange-500">
           <CardHeader className="p-3 pb-1 sm:p-6 sm:pb-2">
             <CardTitle className="text-sm sm:text-lg">Monthly Spending</CardTitle>
             <CardDescription className="text-xs sm:text-sm">{format(currentMonth, 'MMMM yyyy')}</CardDescription>

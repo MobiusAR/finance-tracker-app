@@ -24,7 +24,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <MobileHeader />
 
       {/* Main Content */}
-      <main className="min-h-screen bg-background pb-24 md:ml-64 md:pb-0">
+      <main className="min-h-screen bg-muted/50 pb-24 md:ml-64 md:pb-0">
         <div className="px-4 py-4 md:p-8">
           {children}
         </div>

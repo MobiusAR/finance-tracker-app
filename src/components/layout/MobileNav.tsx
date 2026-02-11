@@ -30,14 +30,19 @@ export function MobileNav() {
               key={item.name}
               href={item.href}
               className={cn(
-                'flex flex-1 flex-col items-center gap-1 py-3 pb-2 text-xs font-medium transition-colors',
+                'flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors',
                 isActive
                   ? 'text-primary'
                   : 'text-muted-foreground'
               )}
             >
-              <item.icon className={cn('h-5 w-5', isActive && 'text-primary')} />
-              <span>{item.name}</span>
+              <div className={cn(
+                'flex h-7 w-12 items-center justify-center rounded-full transition-colors',
+                isActive && 'bg-primary/10'
+              )}>
+                <item.icon className="h-[18px] w-[18px]" />
+              </div>
+              <span className={cn(isActive && 'font-semibold')}>{item.name}</span>
             </Link>
           );
         })}

@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
@@ -89,7 +88,7 @@ export default function CategoriesPage() {
 
       {/* Budget Summary Cards */}
       <div className="mb-4 grid grid-cols-2 gap-3 sm:mb-6 sm:gap-4 md:grid-cols-3">
-        <Card>
+        <Card className="border-l-4 border-l-blue-500">
           <CardHeader className="p-3 pb-1 sm:p-6 sm:pb-2">
             <CardTitle className="text-xs font-medium sm:text-sm">Monthly Budget</CardTitle>
           </CardHeader>
@@ -101,7 +100,7 @@ export default function CategoriesPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-orange-500">
           <CardHeader className="p-3 pb-1 sm:p-6 sm:pb-2">
             <CardTitle className="text-xs font-medium sm:text-sm">Spent</CardTitle>
           </CardHeader>
@@ -113,7 +112,7 @@ export default function CategoriesPage() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-2 md:col-span-1">
+        <Card className="col-span-2 border-l-4 border-l-green-500 md:col-span-1">
           <CardHeader className="p-3 pb-1 sm:p-6 sm:pb-2">
             <CardTitle className="text-xs font-medium sm:text-sm">Status</CardTitle>
           </CardHeader>
@@ -228,13 +227,9 @@ export default function CategoriesPage() {
                           : `${formatCurrency(Math.abs(remaining || 0))} over`}
                       </span>
                     </div>
-                    <div className="relative">
-                      <Progress 
-                        value={Math.min(percentUsed || 0, 100)} 
-                        className="h-1.5 sm:h-2"
-                      />
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary sm:h-2">
                       <div 
-                        className={`absolute inset-0 h-1.5 rounded-full sm:h-2 ${getProgressColor(percentUsed)}`}
+                        className={`h-full rounded-full transition-all duration-500 ${getProgressColor(percentUsed)}`}
                         style={{ width: `${Math.min(percentUsed || 0, 100)}%` }}
                       />
                     </div>
