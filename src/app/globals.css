@@ -8,6 +8,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-playfair);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -37,6 +38,8 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-terracotta: var(--terracotta);
+  --color-sage: var(--sage);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -46,73 +49,104 @@
   --radius-4xl: calc(var(--radius) + 16px);
 }
 
+/* ═══════════════════════════════════════════════════
+   "Sophisticated Hearth" Palette — Light Theme
+   ═══════════════════════════════════════════════════ */
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --radius: 0.75rem;
+
+  /* Core palette */
+  --terracotta: #D98364;
+  --sage: #84A98C;
+
+  /* Surfaces */
+  --background: #F5EBE0;            /* Champagne Silk */
+  --foreground: #1B263B;             /* Midnight Indigo */
+  --card: #FFFCF9;                   /* Warm white */
+  --card-foreground: #1B263B;
+  --popover: #FFFCF9;
+  --popover-foreground: #1B263B;
+
+  /* Primary: Midnight Indigo */
+  --primary: #1B263B;
+  --primary-foreground: #F5EBE0;
+
+  /* Secondary: Light champagne */
+  --secondary: #F0E6DA;
+  --secondary-foreground: #1B263B;
+
+  /* Muted: Warm neutral */
+  --muted: #EDE4D9;
+  --muted-foreground: #778DA9;       /* Slate Grey */
+
+  /* Accent: Terracotta tint */
+  --accent: #E8DDD1;
+  --accent-foreground: #1B263B;
+
+  /* Destructive: Warm red */
+  --destructive: #C1666B;
+
+  /* Borders & inputs */
+  --border: #D9CFC3;
+  --input: #D9CFC3;
+  --ring: #778DA9;
+
+  /* Charts — palette harmonics */
+  --chart-1: #D98364;                /* Terracotta */
+  --chart-2: #84A98C;                /* Sage */
+  --chart-3: #778DA9;                /* Slate */
+  --chart-4: #1B263B;                /* Indigo */
+  --chart-5: #C1666B;                /* Warm red */
+
+  /* Sidebar: Dark Midnight Indigo */
+  --sidebar: #1B263B;
+  --sidebar-foreground: #F5EBE0;
+  --sidebar-primary: #D98364;        /* Terracotta accent */
+  --sidebar-primary-foreground: #FFFCF9;
+  --sidebar-accent: #273350;
+  --sidebar-accent-foreground: #F5EBE0;
+  --sidebar-border: #273350;
+  --sidebar-ring: #778DA9;
 }
 
+/* ═══════════════════════════════════════════════════
+   Dark Theme (Midnight Indigo base)
+   ═══════════════════════════════════════════════════ */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --terracotta: #E09575;
+  --sage: #96B99E;
+
+  --background: #0F1724;
+  --foreground: #F5EBE0;
+  --card: #1B263B;
+  --card-foreground: #F5EBE0;
+  --popover: #1B263B;
+  --popover-foreground: #F5EBE0;
+  --primary: #D98364;
+  --primary-foreground: #1B263B;
+  --secondary: #273350;
+  --secondary-foreground: #F5EBE0;
+  --muted: #273350;
+  --muted-foreground: #778DA9;
+  --accent: #273350;
+  --accent-foreground: #F5EBE0;
+  --destructive: #D4787D;
+  --border: #273350;
+  --input: #273350;
+  --ring: #778DA9;
+  --chart-1: #E09575;
+  --chart-2: #96B99E;
+  --chart-3: #8FA2BA;
+  --chart-4: #D98364;
+  --chart-5: #D4787D;
+  --sidebar: #0F1724;
+  --sidebar-foreground: #F5EBE0;
+  --sidebar-primary: #D98364;
+  --sidebar-primary-foreground: #F5EBE0;
+  --sidebar-accent: #1B263B;
+  --sidebar-accent-foreground: #F5EBE0;
+  --sidebar-border: #1B263B;
+  --sidebar-ring: #778DA9;
 }
 
 @layer base {
@@ -121,6 +155,10 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  /* Serif font for headings — "Boutique Bank" vibe */
+  h1, h2, h3, [data-slot="card-title"] {
+    font-family: var(--font-playfair), Georgia, serif;
   }
 }
 

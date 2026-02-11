@@ -73,30 +73,30 @@ export default function Dashboard() {
 
       {/* Summary Cards - 2x2 grid on mobile, 4 cols on desktop */}
       <div className="mb-4 grid grid-cols-2 gap-3 md:mb-6 md:gap-4 lg:grid-cols-4">
-        <Card className="border-l-4 border-l-blue-500">
+        <Card className="border-l-4 border-l-primary">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
             <CardTitle className="text-xs font-medium md:text-sm">Net Worth</CardTitle>
-            <Wallet className="h-3 w-3 text-blue-500 md:h-4 md:w-4" />
+            <Wallet className="h-3 w-3 text-muted-foreground md:h-4 md:w-4" />
           </CardHeader>
           <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
             <div className="text-lg font-bold md:text-2xl">
               {assetsLoading ? '...' : formatCurrency(totalNetWorth)}
             </div>
             {netWorthChange !== null && (
-              <p className={`text-[10px] md:text-xs ${netWorthChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <p className={`text-[10px] md:text-xs ${netWorthChange >= 0 ? 'text-sage' : 'text-destructive'}`}>
                 {netWorthChange >= 0 ? '+' : ''}{formatCurrency(netWorthChange)}
               </p>
             )}
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-green-500">
+        <Card className="border-l-4 border-l-sage">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
             <CardTitle className="text-xs font-medium md:text-sm">Assets</CardTitle>
-            <TrendingUp className="h-3 w-3 text-green-500 md:h-4 md:w-4" />
+            <TrendingUp className="h-3 w-3 text-sage md:h-4 md:w-4" />
           </CardHeader>
           <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
-            <div className="text-lg font-bold text-green-600 md:text-2xl">
+            <div className="text-lg font-bold text-sage md:text-2xl">
               {assetsLoading ? '...' : formatCurrency(totalAssets)}
             </div>
             <p className="hidden text-xs text-muted-foreground md:block">
@@ -105,13 +105,13 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-red-500">
+        <Card className="border-l-4 border-l-destructive">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
             <CardTitle className="text-xs font-medium md:text-sm">Liabilities</CardTitle>
-            <TrendingDown className="h-3 w-3 text-red-500 md:h-4 md:w-4" />
+            <TrendingDown className="h-3 w-3 text-destructive md:h-4 md:w-4" />
           </CardHeader>
           <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
-            <div className="text-lg font-bold text-red-600 md:text-2xl">
+            <div className="text-lg font-bold text-destructive md:text-2xl">
               {assetsLoading ? '...' : formatCurrency(totalLiabilities)}
             </div>
             <p className="hidden text-xs text-muted-foreground md:block">
@@ -120,10 +120,10 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-orange-500">
+        <Card className="border-l-4 border-l-terracotta">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
             <CardTitle className="text-xs font-medium md:text-sm">Spending</CardTitle>
-            <CreditCard className="h-3 w-3 text-orange-500 md:h-4 md:w-4" />
+            <CreditCard className="h-3 w-3 text-terracotta md:h-4 md:w-4" />
           </CardHeader>
           <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
             <div className="text-lg font-bold md:text-2xl">
@@ -204,7 +204,7 @@ export default function Dashboard() {
             <Card>
               <CardHeader className="p-4 md:p-6">
                 <CardTitle className="flex items-center gap-2 text-base md:text-lg">
-                  <PieChart className="h-4 w-4 text-green-500 md:h-5 md:w-5" />
+                  <PieChart className="h-4 w-4 text-sage md:h-5 md:w-5" />
                   Assets Breakdown
                 </CardTitle>
                 <CardDescription className="text-xs md:text-sm">
@@ -264,7 +264,7 @@ export default function Dashboard() {
             <Card>
               <CardHeader className="p-4 md:p-6">
                 <CardTitle className="flex items-center gap-2 text-base md:text-lg">
-                  <PieChart className="h-4 w-4 text-red-500 md:h-5 md:w-5" />
+                  <PieChart className="h-4 w-4 text-destructive md:h-5 md:w-5" />
                   Liabilities Breakdown
                 </CardTitle>
                 <CardDescription className="text-xs md:text-sm">

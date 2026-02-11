@@ -54,11 +54,11 @@ export default function AssetsPage() {
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'investment': return 'bg-green-500';
-      case 'cash': return 'bg-blue-500';
-      case 'property': return 'bg-orange-500';
-      case 'liability': return 'bg-red-500';
-      default: return 'bg-gray-500';
+      case 'investment': return 'bg-sage';
+      case 'cash': return 'bg-primary';
+      case 'property': return 'bg-terracotta';
+      case 'liability': return 'bg-destructive';
+      default: return 'bg-muted-foreground';
     }
   };
 
@@ -191,7 +191,7 @@ export default function AssetsPage() {
           </div>
 
           {/* Summary */}
-          <Card className="mb-4 border-l-4 border-l-emerald-500">
+          <Card className="mb-4 border-l-4 border-l-sage">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -266,7 +266,7 @@ export default function AssetsPage() {
                                     <DropdownMenuItem onClick={() => { setEditingAsset(asset); setAssetFormOpen(true); }}>
                                       <Pencil className="mr-2 h-4 w-4" />Edit
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleDeleteAsset(asset.id)} className="text-red-600">
+                                    <DropdownMenuItem onClick={() => handleDeleteAsset(asset.id)} className="text-destructive">
                                       <Trash2 className="mr-2 h-4 w-4" />Delete
                                     </DropdownMenuItem>
                                   </DropdownMenuContent>
@@ -304,7 +304,7 @@ export default function AssetsPage() {
                                         <DropdownMenuItem onClick={() => { setEditingAsset(asset); setAssetFormOpen(true); }}>
                                           <Pencil className="mr-2 h-4 w-4" />Edit
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleDeleteAsset(asset.id)} className="text-red-600">
+                                        <DropdownMenuItem onClick={() => handleDeleteAsset(asset.id)} className="text-destructive">
                                           <Trash2 className="mr-2 h-4 w-4" />Delete
                                         </DropdownMenuItem>
                                       </DropdownMenuContent>
@@ -361,7 +361,7 @@ export default function AssetsPage() {
                           <DropdownMenuItem onClick={() => { setEditingCategory(cat); setCategoryFormOpen(true); }}>
                             <Pencil className="mr-2 h-4 w-4" />Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDeleteCategory(cat.id)} className="text-red-600">
+                          <DropdownMenuItem onClick={() => handleDeleteCategory(cat.id)} className="text-destructive">
                             <Trash2 className="mr-2 h-4 w-4" />Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -398,7 +398,7 @@ export default function AssetsPage() {
                         </p>
                       </div>
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDeleteSource(src.id)}>
-                        <Trash2 className="h-4 w-4 text-red-500" />
+                        <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
                   ))}

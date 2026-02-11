@@ -30,10 +30,10 @@ export function MobileHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b bg-background px-4 md:hidden">
+    <header className="sticky top-0 z-40 flex h-14 items-center justify-between bg-card shadow-[0_1px_3px_rgba(27,38,59,0.06)] px-4 md:hidden">
       <div className="flex items-center gap-2">
-        <Wallet className="h-5 w-5 text-primary" />
-        <span className="font-semibold">Finance Tracker</span>
+        <Wallet className="h-5 w-5 text-terracotta" />
+        <span className="font-serif font-semibold tracking-wide">Finance Tracker</span>
       </div>
 
       <Sheet open={open} onOpenChange={setOpen}>

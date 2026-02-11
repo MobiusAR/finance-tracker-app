@@ -49,8 +49,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-      <Card className="w-full max-w-md shadow-lg">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#F5EBE0] to-[#EDE4D9] p-4">
+      <Card className="w-full max-w-md shadow-[0_4px_20px_rgba(27,38,59,0.08)]">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <Wallet className="h-6 w-6 text-primary" />

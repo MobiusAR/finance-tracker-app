@@ -66,10 +66,10 @@ export default function CategoriesPage() {
   };
 
   const getProgressColor = (percentUsed: number | null) => {
-    if (percentUsed === null) return 'bg-gray-300';
-    if (percentUsed >= 100) return 'bg-red-500';
-    if (percentUsed >= 80) return 'bg-yellow-500';
-    return 'bg-green-500';
+    if (percentUsed === null) return 'bg-muted-foreground/30';
+    if (percentUsed >= 100) return 'bg-destructive';
+    if (percentUsed >= 80) return 'bg-terracotta';
+    return 'bg-sage';
   };
 
   // Calculate totals
@@ -88,7 +88,7 @@ export default function CategoriesPage() {
 
       {/* Budget Summary Cards */}
       <div className="mb-4 grid grid-cols-2 gap-3 sm:mb-6 sm:gap-4 md:grid-cols-3">
-        <Card className="border-l-4 border-l-blue-500">
+        <Card className="border-l-4 border-l-primary">
           <CardHeader className="p-3 pb-1 sm:p-6 sm:pb-2">
             <CardTitle className="text-xs font-medium sm:text-sm">Monthly Budget</CardTitle>
           </CardHeader>
@@ -100,7 +100,7 @@ export default function CategoriesPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-orange-500">
+        <Card className="border-l-4 border-l-terracotta">
           <CardHeader className="p-3 pb-1 sm:p-6 sm:pb-2">
             <CardTitle className="text-xs font-medium sm:text-sm">Spent</CardTitle>
           </CardHeader>
@@ -112,21 +112,21 @@ export default function CategoriesPage() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-2 border-l-4 border-l-green-500 md:col-span-1">
+        <Card className="col-span-2 border-l-4 border-l-sage md:col-span-1">
           <CardHeader className="p-3 pb-1 sm:p-6 sm:pb-2">
             <CardTitle className="text-xs font-medium sm:text-sm">Status</CardTitle>
           </CardHeader>
           <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
             {overBudgetCount > 0 ? (
               <div className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-red-500 sm:h-5 sm:w-5" />
-                <span className="text-lg font-bold text-red-600 sm:text-2xl">{overBudgetCount}</span>
+                <AlertTriangle className="h-4 w-4 text-destructive sm:h-5 sm:w-5" />
+                <span className="text-lg font-bold text-destructive sm:text-2xl">{overBudgetCount}</span>
                 <span className="text-xs text-muted-foreground sm:text-sm">over budget</span>
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500 sm:h-5 sm:w-5" />
-                <span className="text-lg font-bold text-green-600 sm:text-2xl">All good!</span>
+                <CheckCircle className="h-4 w-4 text-sage sm:h-5 sm:w-5" />
+                <span className="text-lg font-bold text-sage sm:text-2xl">All good!</span>
               </div>
             )}
           </CardContent>
@@ -170,7 +170,7 @@ export default function CategoriesPage() {
       ) : (
         <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
           {budgetStatus.map(({ category, spent, budget, remaining, percentUsed, isOverBudget }) => (
-            <Card key={category.id} className={isOverBudget ? 'border-red-300 bg-red-50/50' : ''}>
+            <Card key={category.id} className={isOverBudget ? 'border border-destructive/30 bg-destructive/5' : ''}>
               <CardHeader className="p-3 pb-2 sm:p-6 sm:pb-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0 flex-1 sm:gap-3">
@@ -188,7 +188,7 @@ export default function CategoriesPage() {
                   </div>
                   <div className="flex items-center gap-1">
                     {isOverBudget && (
-                      <AlertTriangle className="h-4 w-4 text-red-500 sm:hidden" />
+                      <AlertTriangle className="h-4 w-4 text-destructive sm:hidden" />
                     )}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -203,7 +203,7 @@ export default function CategoriesPage() {
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleDeleteCategory(category.id)}
-                          className="text-red-600"
+                          className="text-destructive"
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete
@@ -221,7 +221,7 @@ export default function CategoriesPage() {
                         <span className="font-medium">{formatCurrency(spent)}</span>
                         <span className="text-muted-foreground"> / {formatCurrency(budget)}</span>
                       </span>
-                      <span className={isOverBudget ? 'text-red-600 font-medium' : 'text-muted-foreground'}>
+                      <span className={isOverBudget ? 'text-destructive font-medium' : 'text-muted-foreground'}>
                         {remaining !== null && remaining >= 0
                           ? `${formatCurrency(remaining)} left`
                           : `${formatCurrency(Math.abs(remaining || 0))} over`}

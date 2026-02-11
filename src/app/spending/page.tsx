@@ -170,7 +170,7 @@ export default function SpendingPage() {
 
       {/* Summary Cards */}
       <div className="mb-4 grid gap-3 sm:mb-6 sm:gap-4 md:grid-cols-2">
-        <Card className="border-l-4 border-l-orange-500">
+        <Card className="border-l-4 border-l-terracotta">
           <CardHeader className="p-3 pb-1 sm:p-6 sm:pb-2">
             <CardTitle className="text-sm sm:text-lg">Monthly Spending</CardTitle>
             <CardDescription className="text-xs sm:text-sm">{format(currentMonth, 'MMMM yyyy')}</CardDescription>
@@ -291,7 +291,7 @@ export default function SpendingPage() {
                                       <DropdownMenuItem onClick={() => handleEditTransaction(transaction)}>
                                         <Pencil className="mr-2 h-4 w-4" />Edit
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => handleDeleteTransaction(transaction.id)} className="text-red-600">
+                                      <DropdownMenuItem onClick={() => handleDeleteTransaction(transaction.id)} className="text-destructive">
                                         <Trash2 className="mr-2 h-4 w-4" />Delete
                                       </DropdownMenuItem>
                                     </DropdownMenuContent>
@@ -346,7 +346,7 @@ export default function SpendingPage() {
                                       </DropdownMenuItem>
                                       <DropdownMenuItem
                                         onClick={() => handleDeleteTransaction(transaction.id)}
-                                        className="text-red-600"
+                                        className="text-destructive"
                                       >
                                         <Trash2 className="mr-2 h-4 w-4" />
                                         Delete
