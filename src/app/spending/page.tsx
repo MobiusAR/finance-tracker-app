@@ -1,17 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
@@ -23,9 +15,9 @@ import { SpendingChart } from '@/components/charts/SpendingChart';
 import { TransactionForm } from '@/components/forms/TransactionForm';
 import { useTransactions, useSpendingCategories, useSpendingSummary } from '@/hooks/useTransactions';
 import { Transaction, CreateTransaction, UpdateTransaction } from '@/lib/supabase/types';
-import { Plus, MoreHorizontal, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, MoreHorizontal, Pencil, Trash2, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
-import { format, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
+import { format, addMonths, subMonths } from 'date-fns';
 
 export default function SpendingPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -36,6 +28,34 @@ export default function SpendingPage() {
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [openDates, setOpenDates] = useState<Set<string>>(new Set());
+  const prevMonthRef = useRef<string>('');
+
+  // Auto-expand the most recent date when month changes
+  useEffect(() => {
+    const monthKey = format(currentMonth, 'yyyy-MM');
+    const isNewMonth = prevMonthRef.current !== monthKey;
+    if (isNewMonth && transactions.length > 0) {
+      prevMonthRef.current = monthKey;
+      const sortedDates = [...new Set(transactions.map(t => t.transaction_date))]
+        .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+      if (sortedDates.length > 0) {
+        setOpenDates(new Set([sortedDates[0]]));
+      }
+    }
+  }, [transactions, currentMonth]);
+
+  const toggleDate = (date: string) => {
+    setOpenDates(prev => {
+      const next = new Set(prev);
+      if (next.has(date)) {
+        next.delete(date);
+      } else {
+        next.add(date);
+      }
+      return next;
+    });
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-SG', {
@@ -168,10 +188,8 @@ export default function SpendingPage() {
             <CardTitle className="text-sm sm:text-lg">Spending by Category</CardTitle>
             <CardDescription className="text-xs sm:text-sm">This month&apos;s breakdown</CardDescription>
           </CardHeader>
-          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
-            <div className="h-[180px] sm:h-auto">
-              <SpendingChart data={summary} />
-            </div>
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0 overflow-hidden">
+            <SpendingChart data={summary} />
           </CardContent>
         </Card>
       </div>
@@ -201,146 +219,149 @@ export default function SpendingPage() {
               All expenses for {format(currentMonth, 'MMMM yyyy')}
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
-            {/* Mobile: Card-based list */}
-            <div className="space-y-3 sm:hidden">
+          <CardContent className="p-0">
+            <div className="divide-y">
               {Object.entries(transactionsByDate)
                 .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
-                .map(([date, dayTransactions]) => (
-                  <div key={date}>
-                    <p className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                      {format(new Date(date), 'EEE, MMM d')}
-                    </p>
-                    <div className="space-y-2">
-                      {dayTransactions.map((transaction) => (
-                        <div key={transaction.id} className="flex items-center justify-between rounded-lg border p-3">
-                          <div className="flex-1 min-w-0 mr-2">
-                            <p className="font-medium text-sm truncate">
-                              {transaction.description || 'No description'}
-                            </p>
-                            {transaction.category ? (
-                              <Badge
-                                variant="secondary"
-                                className="mt-1 text-xs"
-                                style={{
-                                  backgroundColor: `${transaction.category.color}20`,
-                                  color: transaction.category.color,
-                                }}
-                              >
-                                {transaction.category.name}
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="mt-1 text-xs">Uncategorized</Badge>
-                            )}
+                .map(([date, dayTransactions]) => {
+                  const dailyTotal = dayTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
+                  const isOpen = openDates.has(date);
+                  return (
+                    <div key={date}>
+                      {/* Date header - clickable toggle */}
+                      <button
+                        onClick={() => toggleDate(date)}
+                        className="w-full flex items-center justify-between px-3 py-2.5 sm:px-6 sm:py-3 hover:bg-muted/50 transition-colors text-left"
+                      >
+                        <div className="flex items-center gap-2">
+                          <ChevronDown
+                            className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform duration-200 ${
+                              isOpen ? '' : '-rotate-90'
+                            }`}
+                          />
+                          <span className="text-xs sm:text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                            {format(new Date(date), 'EEE, MMM d')}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            ({dayTransactions.length})
+                          </span>
+                        </div>
+                        <span className="text-sm sm:text-base font-semibold">
+                          {formatCurrency(dailyTotal)}
+                        </span>
+                      </button>
+
+                      {/* Expanded transactions */}
+                      {isOpen && (
+                        <div className="px-3 pb-3 sm:px-6 sm:pb-4">
+                          {/* Mobile: Card-based list */}
+                          <div className="space-y-2 sm:hidden">
+                            {dayTransactions.map((transaction) => (
+                              <div key={transaction.id} className="flex items-center justify-between rounded-lg border p-3">
+                                <div className="flex-1 min-w-0 mr-2">
+                                  <p className="font-medium text-sm truncate">
+                                    {transaction.description || 'No description'}
+                                  </p>
+                                  {transaction.category ? (
+                                    <Badge
+                                      variant="secondary"
+                                      className="mt-1 text-xs"
+                                      style={{
+                                        backgroundColor: `${transaction.category.color}20`,
+                                        color: transaction.category.color,
+                                      }}
+                                    >
+                                      {transaction.category.name}
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="mt-1 text-xs">Uncategorized</Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span className="font-semibold text-sm whitespace-nowrap">
+                                    {formatCurrency(transaction.amount)}
+                                  </span>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={() => handleEditTransaction(transaction)}>
+                                        <Pencil className="mr-2 h-4 w-4" />Edit
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleDeleteTransaction(transaction.id)} className="text-red-600">
+                                        <Trash2 className="mr-2 h-4 w-4" />Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                          <div className="flex items-center gap-1">
-                            <span className="font-semibold text-sm whitespace-nowrap">
-                              {formatCurrency(transaction.amount)}
-                            </span>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleEditTransaction(transaction)}>
-                                  <Pencil className="mr-2 h-4 w-4" />Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDeleteTransaction(transaction.id)} className="text-red-600">
-                                  <Trash2 className="mr-2 h-4 w-4" />Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+
+                          {/* Desktop: Row-based list */}
+                          <div className="hidden sm:block space-y-1">
+                            {dayTransactions.map((transaction) => (
+                              <div
+                                key={transaction.id}
+                                className="flex items-center gap-4 rounded-md px-3 py-2 hover:bg-muted/30 transition-colors"
+                              >
+                                <div className="flex-1 min-w-0 text-sm">
+                                  {transaction.description || (
+                                    <span className="text-muted-foreground">No description</span>
+                                  )}
+                                </div>
+                                <div className="shrink-0">
+                                  {transaction.category ? (
+                                    <Badge
+                                      variant="secondary"
+                                      style={{
+                                        backgroundColor: `${transaction.category.color}20`,
+                                        color: transaction.category.color,
+                                        borderColor: transaction.category.color,
+                                      }}
+                                    >
+                                      {transaction.category.name}
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline">Uncategorized</Badge>
+                                  )}
+                                </div>
+                                <div className="w-24 text-right font-medium text-sm shrink-0">
+                                  {formatCurrency(transaction.amount)}
+                                </div>
+                                <div className="shrink-0">
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={() => handleEditTransaction(transaction)}>
+                                        <Pencil className="mr-2 h-4 w-4" />
+                                        Edit
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() => handleDeleteTransaction(transaction.id)}
+                                        className="text-red-600"
+                                      >
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
-                      ))}
+                      )}
                     </div>
-                  </div>
-                ))}
-            </div>
-
-            {/* Desktop: Table view */}
-            <div className="hidden sm:block">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {Object.entries(transactionsByDate)
-                    .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
-                    .map(([date, dayTransactions]) => (
-                      <>
-                        {dayTransactions.map((transaction, index) => (
-                          <TableRow key={transaction.id}>
-                            {index === 0 && (
-                              <TableCell
-                                rowSpan={dayTransactions.length}
-                                className="font-medium align-top"
-                              >
-                                {format(new Date(date), 'EEE, MMM d')}
-                              </TableCell>
-                            )}
-                            <TableCell>
-                              {transaction.description || (
-                                <span className="text-muted-foreground">No description</span>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {transaction.category ? (
-                                <Badge
-                                  variant="secondary"
-                                  style={{
-                                    backgroundColor: `${transaction.category.color}20`,
-                                    color: transaction.category.color,
-                                    borderColor: transaction.category.color,
-                                  }}
-                                >
-                                  {transaction.category.name}
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline">Uncategorized</Badge>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right font-medium">
-                              {formatCurrency(transaction.amount)}
-                            </TableCell>
-                            <TableCell>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem
-                                    onClick={() => handleEditTransaction(transaction)}
-                                  >
-                                    <Pencil className="mr-2 h-4 w-4" />
-                                    Edit
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => handleDeleteTransaction(transaction.id)}
-                                    className="text-red-600"
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </>
-                    ))}
-                </TableBody>
-              </Table>
+                  );
+                })}
             </div>
           </CardContent>
         </Card>

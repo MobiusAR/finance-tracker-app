@@ -39,8 +39,10 @@ export function SpendingChart({ data }: SpendingChartProps) {
     return null;
   };
 
+  const chartHeight = Math.max(120, data.length * 55 + 20);
+
   return (
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={chartHeight}>
       <BarChart data={data} layout="vertical" margin={{ left: 80 }}>
         <XAxis type="number" tickFormatter={(value) => `$${value}`} />
         <YAxis type="category" dataKey="category" width={80} tick={{ fontSize: 12 }} />
