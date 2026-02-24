@@ -17,6 +17,7 @@ export interface AssetSource {
   name: string;
   category_id: string;
   description: string | null;
+  fx_spread_margin: number;
   created_at: string;
   updated_at: string;
   // Joined data
@@ -31,6 +32,9 @@ export interface Asset {
   current_value: number;
   currency: string;
   notes: string | null;
+  ticker_symbol: string | null;
+  shares: number | null;
+  is_auto_tracked: boolean;
   created_at: string;
   updated_at: string;
   // Joined data
@@ -89,6 +93,7 @@ export interface CreateAssetSource {
   name: string;
   category_id: string;
   description?: string;
+  fx_spread_margin?: number;
 }
 
 export interface CreateAsset {
@@ -98,6 +103,9 @@ export interface CreateAsset {
   current_value: number;
   currency?: string;
   notes?: string;
+  ticker_symbol?: string;
+  shares?: number;
+  is_auto_tracked?: boolean;
 }
 
 export interface UpdateAsset {
@@ -107,6 +115,9 @@ export interface UpdateAsset {
   current_value?: number;
   currency?: string;
   notes?: string;
+  ticker_symbol?: string;
+  shares?: number;
+  is_auto_tracked?: boolean;
 }
 
 export interface CreateSpendingCategory {

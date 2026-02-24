@@ -40,6 +40,7 @@ export function SourceForm({
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [description, setDescription] = useState('');
+  const [fxSpreadMargin, setFxSpreadMargin] = useState('0');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -52,6 +53,7 @@ export function SourceForm({
     setName('');
     setCategoryId(defaultCategoryId || '');
     setDescription('');
+    setFxSpreadMargin('0');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,6 +70,7 @@ export function SourceForm({
         name,
         category_id: categoryId,
         description: description || undefined,
+        fx_spread_margin: parseFloat(fxSpreadMargin) || 0,
       });
       toast.success('Source created');
       onOpenChange(false);
@@ -124,6 +127,19 @@ export function SourceForm({
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Optional description"
               />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="source-fx">FX Spread Margin (%)</Label>
+              <Input
+                id="source-fx"
+                type="number"
+                step="0.01"
+                value={fxSpreadMargin}
+                onChange={(e) => setFxSpreadMargin(e.target.value)}
+                placeholder="e.g. 0.00 for IBKR, -0.35 for Moomoo"
+              />
+              <p className="text-xs text-muted-foreground">Markup applied to spot rate for automated tracking.</p>
             </div>
           </div>
           <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:gap-0">

@@ -47,6 +47,9 @@ export function AssetForm({
   const [currentValue, setCurrentValue] = useState('');
   const [currency, setCurrency] = useState('SGD');
   const [notes, setNotes] = useState('');
+  const [isAutoTracked, setIsAutoTracked] = useState(false);
+  const [tickerSymbol, setTickerSymbol] = useState('');
+  const [shares, setShares] = useState('');
   const [loading, setLoading] = useState(false);
 
   const isEditing = !!asset;
@@ -64,6 +67,9 @@ export function AssetForm({
       setCurrentValue(asset.current_value.toString());
       setCurrency(asset.currency);
       setNotes(asset.notes || '');
+      setIsAutoTracked(asset.is_auto_tracked || false);
+      setTickerSymbol(asset.ticker_symbol || '');
+      setShares(asset.shares?.toString() || '');
     } else {
       resetForm();
     }
@@ -76,13 +82,26 @@ export function AssetForm({
     setCurrentValue('');
     setCurrency('SGD');
     setNotes('');
+    setIsAutoTracked(false);
+    setTickerSymbol('');
+    setShares('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name || !categoryId || !sourceId || !currentValue) {
-      toast.error('Please fill in all required fields');
+    if (!name || !categoryId || !sourceId) {
+      toast.error('Please fill in all required basic fields');
+      return;
+    }
+
+    if (isAutoTracked && (!tickerSymbol || !shares)) {
+      toast.error('Please provide a ticker symbol and number of shares for auto-tracked assets');
+      return;
+    }
+
+    if (!isAutoTracked && !currentValue) {
+      toast.error('Please provide a current value');
       return;
     }
 
@@ -92,9 +111,12 @@ export function AssetForm({
         name,
         category_id: categoryId,
         source_id: sourceId,
-        current_value: parseFloat(currentValue),
-        currency,
+        current_value: isAutoTracked ? 0 : parseFloat(currentValue),
+        currency: isAutoTracked ? 'USD' : currency,
         notes: notes || undefined,
+        is_auto_tracked: isAutoTracked,
+        ticker_symbol: isAutoTracked ? tickerSymbol.toUpperCase() : undefined,
+        shares: isAutoTracked ? parseFloat(shares) : undefined,
       });
       toast.success(isEditing ? 'Asset updated' : 'Asset created');
       onOpenChange(false);
@@ -177,35 +199,73 @@ export function AssetForm({
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="value">Current Value *</Label>
-                <Input
-                  id="value"
-                  type="number"
-                  step="0.01"
-                  value={currentValue}
-                  onChange={(e) => setCurrentValue(e.target.value)}
-                  placeholder="0.00"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="currency">Currency</Label>
-                <Select value={currency} onValueChange={setCurrency}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="SGD">SGD</SelectItem>
-                    <SelectItem value="USD">USD</SelectItem>
-                    <SelectItem value="EUR">EUR</SelectItem>
-                    <SelectItem value="GBP">GBP</SelectItem>
-                    <SelectItem value="JPY">JPY</SelectItem>
-                    <SelectItem value="CNY">CNY</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="flex items-center space-x-2 py-2">
+              <input
+                type="checkbox"
+                id="auto-track"
+                checked={isAutoTracked}
+                onChange={(e) => setIsAutoTracked(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <Label htmlFor="auto-track" className="font-normal cursor-pointer">
+                Auto-track value via US Stock Market
+              </Label>
             </div>
+
+            {isAutoTracked ? (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="ticker">Ticker Symbol *</Label>
+                  <Input
+                    id="ticker"
+                    value={tickerSymbol}
+                    onChange={(e) => setTickerSymbol(e.target.value.toUpperCase())}
+                    placeholder="e.g., AAPL"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="shares">Number of Shares *</Label>
+                  <Input
+                    id="shares"
+                    type="number"
+                    step="0.0001"
+                    value={shares}
+                    onChange={(e) => setShares(e.target.value)}
+                    placeholder="e.g., 10.5"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="value">Current Value *</Label>
+                  <Input
+                    id="value"
+                    type="number"
+                    step="0.01"
+                    value={currentValue}
+                    onChange={(e) => setCurrentValue(e.target.value)}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="currency">Currency</Label>
+                  <Select value={currency} onValueChange={setCurrency}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="SGD">SGD</SelectItem>
+                      <SelectItem value="USD">USD</SelectItem>
+                      <SelectItem value="EUR">EUR</SelectItem>
+                      <SelectItem value="GBP">GBP</SelectItem>
+                      <SelectItem value="JPY">JPY</SelectItem>
+                      <SelectItem value="CNY">CNY</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
 
             <div className="grid gap-2">
               <Label htmlFor="notes">Notes</Label>
