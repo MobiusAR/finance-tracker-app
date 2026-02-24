@@ -12,32 +12,55 @@ export async function POST(request: Request) {
             return NextResponse.json({ prices: {} });
         }
 
-        // 1. Fetch all unique ticker symbols plus USD/SGD
+        // 1. Fetch all unique ticker symbols
         const tickers = new Set(assets.map((a: any) => a.ticker_symbol).filter(Boolean));
-        const allSymbols = Array.from(tickers).concat(['USDSGD=X']);
+        const allSymbols = Array.from(tickers) as string[];
 
-        // Fetch quotes in parallel
+        // Fetch asset quotes first
         const quotes = await yahooFinance.quote(allSymbols) as any[];
 
-        // Create a map for quick lookup
-        const quoteMap: Record<string, number> = {};
+        // Create a map for quick lookup and identify which currencies we need to fetch against SGD
+        const quoteMap: Record<string, any> = {};
+        const requiredCurrencies = new Set<string>();
+
         quotes.forEach((q: any) => {
-            quoteMap[q.symbol] = q.regularMarketPrice || 0;
+            quoteMap[q.symbol] = q;
+            if (q.currency && q.currency !== 'SGD') {
+                requiredCurrencies.add(`${q.currency}SGD=X`.toUpperCase());
+            }
         });
 
-        const usdSgdRate = quoteMap['USDSGD=X'] || 1.34; // fallback to 1.34 if API fails
+        // 2. Fetch required FX rates
+        const fxRates = Array.from(requiredCurrencies) as string[];
+        const fxQuotes = fxRates.length > 0 ? await yahooFinance.quote(fxRates) as any[] : [];
 
-        // 2. Calculate lived updated values for the requested assets
+        const fxMap: Record<string, number> = {};
+        fxQuotes.forEach((q: any) => {
+            fxMap[q.symbol] = q.regularMarketPrice || 1;
+        });
+
+        // 3. Calculate lived updated values for the requested assets
         const calculatedPrices: Record<string, number> = {};
 
         assets.forEach((asset: any) => {
             if (!asset.ticker_symbol || !asset.shares) return;
 
-            const latestPrice = quoteMap[asset.ticker_symbol] || 0;
+            const quote = quoteMap[asset.ticker_symbol];
+            if (!quote) return;
+
+            const latestPrice = quote.regularMarketPrice || 0;
+            const assetCurrency = quote.currency || 'USD';
             const fxSpread = asset.source?.fx_spread_margin || 0;
 
-            // Value in SGD = Shares * USD Price * (SGD/USD spot rate * (1 + broker markup))
-            const sgdValue = asset.shares * latestPrice * (usdSgdRate * (1 + Number(fxSpread)));
+            let exchangeRateToSgd = 1;
+
+            if (assetCurrency !== 'SGD') {
+                const pair = `${assetCurrency}SGD=X`.toUpperCase();
+                exchangeRateToSgd = fxMap[pair] || 1;
+            }
+
+            // Value in SGD = Shares * Local Price * (Local/SGD spot rate * (1 + broker markup))
+            const sgdValue = asset.shares * latestPrice * (exchangeRateToSgd * (1 + Number(fxSpread)));
 
             calculatedPrices[asset.id] = sgdValue;
         });
