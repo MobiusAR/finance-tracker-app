@@ -39,7 +39,7 @@ export async function GET(request: Request) {
 
         // 3. Extract unique ticker symbols
         const tickers = new Set(assets.map((a: any) => a.ticker_symbol).filter(Boolean));
-        const allSymbols = Array.from(tickers) as string[];
+        const allSymbols = Array.from(tickers).map((t: any) => t.toUpperCase());
 
         // 4. Fetch asset quotes from Yahoo Finance
         const quotes = await yahooFinance.quote(allSymbols) as any[];
@@ -70,7 +70,8 @@ export async function GET(request: Request) {
         assets.forEach((asset: any) => {
             if (!asset.ticker_symbol || !asset.shares) return;
 
-            const quote = quoteMap[asset.ticker_symbol];
+            const normalizedTicker = asset.ticker_symbol.toUpperCase();
+            const quote = quoteMap[normalizedTicker];
             if (!quote) return;
 
             const latestPrice = quote.regularMarketPrice || 0;
@@ -112,7 +113,28 @@ export async function GET(request: Request) {
 
         return NextResponse.json({
             success: true,
-            message: `Successfully synchronized ${updatePromises.length} assets`
+            message: `Successfully synchronized ${updatePromises.length} assets`,
+            debug_asset_calculations: assets.map((asset: any) => {
+                const quote = quoteMap[asset.ticker_symbol];
+                const latestPrice = quote?.regularMarketPrice || 0;
+                const assetCurrency = quote?.currency || 'USD';
+                const sourceData = Array.isArray(asset.source) ? asset.source[0] : asset.source;
+                const fxSpread = sourceData?.fx_spread_margin || 0;
+                const pair = `${assetCurrency}SGD=X`.toUpperCase();
+                const exchangeRateToSgd = assetCurrency !== 'SGD' ? (fxMap[pair] || 1) : 1;
+                const sgdValue = asset.shares * latestPrice * (exchangeRateToSgd * (1 + Number(fxSpread)));
+
+                return {
+                    id: asset.id,
+                    ticker: asset.ticker_symbol,
+                    shares: asset.shares,
+                    latestPrice,
+                    assetCurrency,
+                    fxSpread,
+                    exchangeRateToSgd,
+                    finalValue: Math.round(sgdValue * 100) / 100
+                };
+            })
         });
 
     } catch (error) {
