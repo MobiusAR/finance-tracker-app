@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,43 +42,6 @@ export default function AssetsPage() {
   const [selectedTab, setSelectedTab] = useState('all');
   const [mainTab, setMainTab] = useState('assets');
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
-  const [livePrices, setLivePrices] = useState<Record<string, number>>({});
-  const [fetchingPrices, setFetchingPrices] = useState(false);
-
-  useEffect(() => {
-    const fetchLivePrices = async () => {
-      const autoTrackedAssets = assets.filter(a => a.is_auto_tracked);
-      if (autoTrackedAssets.length === 0) return;
-
-      try {
-        setFetchingPrices(true);
-        const res = await fetch('/api/assets/market-data', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ assets: autoTrackedAssets }),
-        });
-        const data = await res.json();
-        if (data.prices) {
-          setLivePrices(data.prices);
-        }
-      } catch (error) {
-        console.error('Failed to fetch live prices:', error);
-      } finally {
-        setFetchingPrices(false);
-      }
-    };
-
-    if (assets.length > 0) {
-      fetchLivePrices();
-    }
-  }, [assets]);
-
-  const getAssetValue = (asset: Asset) => {
-    if (asset.is_auto_tracked && livePrices[asset.id] !== undefined) {
-      return livePrices[asset.id];
-    }
-    return Number(asset.current_value);
-  };
 
   const formatCurrency = (value: number, currency: string = 'SGD') => {
     return new Intl.NumberFormat('en-SG', {
@@ -188,7 +151,7 @@ export default function AssetsPage() {
   }, {} as Record<string, Asset[]>);
 
   const totalValue = filteredAssets.reduce((sum, asset) => {
-    const val = getAssetValue(asset);
+    const val = Number(asset.current_value);
     const value = asset.category?.type === 'liability' ? -val : val;
     return sum + value;
   }, 0);
@@ -260,7 +223,7 @@ export default function AssetsPage() {
             <div className="space-y-3">
               {Object.entries(groupedAssets).map(([categoryName, categoryAssets]) => {
                 const category = categories.find((c) => c.name === categoryName);
-                const categoryTotal = categoryAssets.reduce((sum, a) => sum + getAssetValue(a), 0);
+                const categoryTotal = categoryAssets.reduce((sum, a) => sum + Number(a.current_value), 0);
                 const isExpanded = expandedCategory === categoryName;
 
                 return (
@@ -296,7 +259,7 @@ export default function AssetsPage() {
                                 </p>
                               </div>
                               <div className="flex items-center gap-2">
-                                <span className="font-semibold">{formatCurrency(getAssetValue(asset), 'SGD')}</span>
+                                <span className="font-semibold">{formatCurrency(Number(asset.current_value), asset.currency)}</span>
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -342,7 +305,7 @@ export default function AssetsPage() {
                                   </TableCell>
                                   <TableCell>{asset.source?.name || '-'}</TableCell>
                                   <TableCell className="text-right">
-                                    {formatCurrency(getAssetValue(asset), 'SGD')}
+                                    {formatCurrency(Number(asset.current_value), asset.currency)}
                                   </TableCell>
                                   <TableCell className="text-muted-foreground">{format(new Date(asset.updated_at), 'MMM d')}</TableCell>
                                   <TableCell>
