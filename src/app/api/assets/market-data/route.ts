@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import yahooFinance from 'yahoo-finance2';
+import YahooFinance from 'yahoo-finance2';
+
+const yahooFinance = new YahooFinance();
 
 // In Next.js App Router, POST method is easiest for sending a list of assets
 export async function POST(request: Request) {
