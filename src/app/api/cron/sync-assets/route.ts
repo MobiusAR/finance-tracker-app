@@ -11,6 +11,11 @@ export async function GET(request: Request) {
         // Initialize an admin Supabase client using the Service Role Key to bypass RLS policies
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
         const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
+        if (!supabaseUrl || !supabaseServiceKey) {
+            return NextResponse.json({ error: 'Missing Supabase Service Keys. Ensure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set.' }, { status: 500 });
+        }
+
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
         // 1. Verify Vercel Cron Secret to ensure only authorized triggers run this
