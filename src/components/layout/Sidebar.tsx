@@ -11,6 +11,7 @@ import {
   Receipt,
   Tags,
   TrendingUp,
+  HandCoins,
   LogOut,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -18,6 +19,7 @@ import { toast } from 'sonner';
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Assets', href: '/assets', icon: TrendingUp },
+  { name: 'Loans', href: '/loans', icon: HandCoins },
   { name: 'Spending', href: '/spending', icon: Receipt },
   { name: 'Categories', href: '/categories', icon: Tags },
 ];

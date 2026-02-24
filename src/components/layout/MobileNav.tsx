@@ -8,11 +8,13 @@ import {
   TrendingUp,
   Receipt,
   Tags,
+  HandCoins,
 } from 'lucide-react';
 
 const navigation = [
   { name: 'Home', href: '/', icon: LayoutDashboard },
   { name: 'Assets', href: '/assets', icon: TrendingUp },
+  { name: 'Loans', href: '/loans', icon: HandCoins },
   { name: 'Spending', href: '/spending', icon: Receipt },
   { name: 'Categories', href: '/categories', icon: Tags },
 ];

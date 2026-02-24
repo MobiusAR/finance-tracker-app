@@ -168,6 +168,39 @@ export interface MonthlySpending {
   byCategory: SpendingSummary[];
 }
 
+export interface PersonalLoan {
+  id: string;
+  borrower_name: string;
+  amount: number;
+  currency: string;
+  status: 'active' | 'repaid' | 'defaulted';
+  date_lent: string;
+  due_date: string | null;
+  reason: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreatePersonalLoan {
+  borrower_name: string;
+  amount: number;
+  currency?: string;
+  status?: 'active' | 'repaid' | 'defaulted';
+  date_lent: string;
+  due_date?: string | null;
+  reason?: string | null;
+}
+
+export interface UpdatePersonalLoan {
+  borrower_name?: string;
+  amount?: number;
+  currency?: string;
+  status?: 'active' | 'repaid' | 'defaulted';
+  date_lent?: string;
+  due_date?: string | null;
+  reason?: string | null;
+}
+
 // Supabase Database type definition
 export interface Database {
   public: {
@@ -206,6 +239,11 @@ export interface Database {
         Row: AssetSnapshot;
         Insert: Omit<AssetSnapshot, 'id' | 'created_at'> & { id?: string };
         Update: Partial<Omit<AssetSnapshot, 'id' | 'created_at'>>;
+      };
+      personal_loans: {
+        Row: PersonalLoan;
+        Insert: CreatePersonalLoan & { id?: string };
+        Update: UpdatePersonalLoan;
       };
     };
   };
