@@ -46,7 +46,7 @@ export function LiabilitiesChart({ data, onCategoryClick }: LiabilitiesChartProp
   const COLORS = ['#ef4444', '#dc2626', '#b91c1c', '#991b1b', '#7f1d1d'];
 
   return (
-    <ResponsiveContainer width="100%" height={250}>
+    <ResponsiveContainer width="100%" height="100%">
       <PieChart>
         <Pie
           data={chartData}

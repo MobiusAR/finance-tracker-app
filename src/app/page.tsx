@@ -58,7 +58,7 @@ export default function Dashboard() {
   // Get last snapshot info
   const lastSnapshot = history.length > 0 ? history[history.length - 1] : null;
   const previousSnapshot = history.length > 1 ? history[history.length - 2] : null;
-  
+
   // Calculate month-over-month change
   const netWorthChange = lastSnapshot && previousSnapshot
     ? lastSnapshot.net_worth - previousSnapshot.net_worth
@@ -138,20 +138,20 @@ export default function Dashboard() {
 
       {/* Tabbed Content */}
       <Tabs defaultValue="history" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4 h-auto">
-          <TabsTrigger value="history" className="flex flex-col items-center gap-0.5 py-2 px-1 md:flex-row md:gap-2 md:py-2 md:px-4">
+        <TabsList className="flex h-auto w-full items-center justify-start overflow-x-auto hide-scrollbar p-1 sm:grid sm:grid-cols-4">
+          <TabsTrigger value="history" className="flex-1 shrink-0 flex-col items-center gap-0.5 py-2 px-3 md:flex-row md:gap-2 md:py-2 md:px-4">
             <History className="h-4 w-4" />
             <span className="text-xs md:text-sm">History</span>
           </TabsTrigger>
-          <TabsTrigger value="assets" className="flex flex-col items-center gap-0.5 py-2 px-1 md:flex-row md:gap-2 md:py-2 md:px-4">
+          <TabsTrigger value="assets" className="flex-1 shrink-0 flex-col items-center gap-0.5 py-2 px-3 md:flex-row md:gap-2 md:py-2 md:px-4">
             <TrendingUp className="h-4 w-4" />
             <span className="text-xs md:text-sm">Assets</span>
           </TabsTrigger>
-          <TabsTrigger value="liabilities" className="flex flex-col items-center gap-0.5 py-2 px-1 md:flex-row md:gap-2 md:py-2 md:px-4">
+          <TabsTrigger value="liabilities" className="flex-1 shrink-0 flex-col items-center gap-0.5 py-2 px-3 md:flex-row md:gap-2 md:py-2 md:px-4">
             <TrendingDown className="h-4 w-4" />
             <span className="text-xs md:text-sm">Liabilities</span>
           </TabsTrigger>
-          <TabsTrigger value="spending" className="flex flex-col items-center gap-0.5 py-2 px-1 md:flex-row md:gap-2 md:py-2 md:px-4">
+          <TabsTrigger value="spending" className="flex-1 shrink-0 flex-col items-center gap-0.5 py-2 px-3 md:flex-row md:gap-2 md:py-2 md:px-4">
             <Receipt className="h-4 w-4" />
             <span className="text-xs md:text-sm">Spending</span>
           </TabsTrigger>
@@ -173,8 +173,8 @@ export default function Dashboard() {
                     )}
                   </CardDescription>
                 </div>
-                <Button 
-                  onClick={handleTakeSnapshot} 
+                <Button
+                  onClick={handleTakeSnapshot}
                   disabled={snapshotLoading || assetsLoading}
                   size="sm"
                   className="w-full md:w-auto"
@@ -186,11 +186,11 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
               {historyLoading ? (
-                <div className="flex h-[250px] items-center justify-center md:h-[400px]">
+                <div className="flex h-[300px] items-center justify-center md:h-[400px]">
                   Loading history...
                 </div>
               ) : (
-                <div className="h-[250px] md:h-[400px]">
+                <div className="h-[300px] md:h-[400px]">
                   <NetWorthTrendChart data={history} />
                 </div>
               )}
@@ -213,11 +213,11 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
                 {assetsLoading ? (
-                  <div className="flex h-[250px] items-center justify-center md:h-[350px]">
+                  <div className="flex h-[300px] items-center justify-center md:h-[350px]">
                     Loading...
                   </div>
                 ) : (
-                  <div className="h-[250px] md:h-[350px]">
+                  <div className="h-[300px] md:h-[350px]">
                     <NetWorthChart
                       data={breakdown}
                       onCategoryClick={setSelectedAssetCategory}
@@ -240,14 +240,14 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
                 {selectedAssetCategory && sourceBreakdown[selectedAssetCategory] ? (
-                  <div className="h-[250px] md:h-[350px]">
+                  <div className="h-[300px] md:h-[350px]">
                     <SourceBreakdownChart
                       data={sourceBreakdown[selectedAssetCategory]}
                       category={selectedAssetCategory}
                     />
                   </div>
                 ) : (
-                  <div className="flex h-[250px] items-center justify-center text-sm text-muted-foreground md:h-[350px]">
+                  <div className="flex h-[300px] items-center justify-center text-sm text-muted-foreground md:h-[350px]">
                     {assetsLoading
                       ? 'Loading...'
                       : 'Tap a category to see breakdown'}
@@ -273,11 +273,11 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
                 {assetsLoading ? (
-                  <div className="flex h-[250px] items-center justify-center md:h-[350px]">
+                  <div className="flex h-[300px] items-center justify-center md:h-[350px]">
                     Loading...
                   </div>
                 ) : (
-                  <div className="h-[250px] md:h-[350px]">
+                  <div className="h-[300px] md:h-[350px]">
                     <LiabilitiesChart
                       data={breakdown}
                       onCategoryClick={setSelectedLiabilityCategory}
@@ -300,14 +300,14 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
                 {selectedLiabilityCategory && sourceBreakdown[selectedLiabilityCategory] ? (
-                  <div className="h-[250px] md:h-[350px]">
+                  <div className="h-[300px] md:h-[350px]">
                     <SourceBreakdownChart
                       data={sourceBreakdown[selectedLiabilityCategory]}
                       category={selectedLiabilityCategory}
                     />
                   </div>
                 ) : (
-                  <div className="flex h-[250px] items-center justify-center text-sm text-muted-foreground md:h-[350px]">
+                  <div className="flex h-[300px] items-center justify-center text-sm text-muted-foreground md:h-[350px]">
                     {assetsLoading
                       ? 'Loading...'
                       : 'Tap a category to see breakdown'}

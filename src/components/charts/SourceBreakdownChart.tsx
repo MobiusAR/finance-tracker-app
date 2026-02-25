@@ -43,28 +43,30 @@ export function SourceBreakdownChart({ data, category }: SourceBreakdownChartPro
   };
 
   return (
-    <div>
-      <h4 className="mb-2 text-sm font-medium">{category} Breakdown</h4>
-      <ResponsiveContainer width="100%" height={250}>
-        <PieChart>
-          <Pie
-            data={data}
-            cx="50%"
-            cy="50%"
-            innerRadius={40}
-            outerRadius={70}
-            paddingAngle={2}
-            dataKey="value"
-            nameKey="source"
-          >
-            {data.map((_, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-            ))}
-          </Pie>
-          <Tooltip content={<CustomTooltip />} />
-          <Legend formatter={(value) => <span className="text-xs">{value}</span>} />
-        </PieChart>
-      </ResponsiveContainer>
+    <div className="flex h-full flex-col">
+      <h4 className="mb-2 shrink-0 text-sm font-medium">{category} Breakdown</h4>
+      <div className="min-h-0 flex-1">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              cx="50%"
+              cy="50%"
+              innerRadius={40}
+              outerRadius={70}
+              paddingAngle={2}
+              dataKey="value"
+              nameKey="source"
+            >
+              {data.map((_, index) => (
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip content={<CustomTooltip />} />
+            <Legend formatter={(value) => <span className="text-xs">{value}</span>} />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }

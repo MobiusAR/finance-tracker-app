@@ -174,9 +174,9 @@ export default function AssetsPage() {
         <TabsContent value="assets" className="mt-4">
           {/* Filter Tabs */}
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto hide-scrollbar">
               <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-                <TabsList className="h-auto">
+                <TabsList className="h-auto inline-flex w-max">
                   <TabsTrigger value="all" className="text-xs px-2 py-1.5">All</TabsTrigger>
                   <TabsTrigger value="investment" className="text-xs px-2 py-1.5">Invest</TabsTrigger>
                   <TabsTrigger value="cash" className="text-xs px-2 py-1.5">Cash</TabsTrigger>
