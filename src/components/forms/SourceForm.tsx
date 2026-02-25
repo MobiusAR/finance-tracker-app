@@ -19,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { AssetCategory, CreateAssetSource } from '@/lib/supabase/types';
+import { AssetCategory, AssetSource, CreateAssetSource } from '@/lib/supabase/types';
 import { toast } from 'sonner';
 
 interface SourceFormProps {
@@ -28,6 +28,7 @@ interface SourceFormProps {
   categories: AssetCategory[];
   onSubmit: (data: CreateAssetSource) => Promise<void>;
   defaultCategoryId?: string;
+  source?: AssetSource | null;
 }
 
 export function SourceForm({
@@ -36,6 +37,7 @@ export function SourceForm({
   categories,
   onSubmit,
   defaultCategoryId,
+  source,
 }: SourceFormProps) {
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -44,10 +46,20 @@ export function SourceForm({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (open && defaultCategoryId) {
-      setCategoryId(defaultCategoryId);
+    if (open) {
+      if (source) {
+        setName(source.name);
+        setCategoryId(source.category_id);
+        setDescription(source.description || '');
+        setFxSpreadMargin((source.fx_spread_margin ?? 0).toString());
+      } else {
+        setName('');
+        setCategoryId(defaultCategoryId || '');
+        setDescription('');
+        setFxSpreadMargin('0');
+      }
     }
-  }, [open, defaultCategoryId]);
+  }, [open, source, defaultCategoryId]);
 
   const resetForm = () => {
     setName('');
@@ -72,7 +84,7 @@ export function SourceForm({
         description: description || undefined,
         fx_spread_margin: parseFloat(fxSpreadMargin) || 0,
       });
-      toast.success('Source created');
+      toast.success(source ? 'Source updated' : 'Source created');
       onOpenChange(false);
       resetForm();
     } catch (error) {
@@ -86,9 +98,9 @@ export function SourceForm({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Source</DialogTitle>
+          <DialogTitle>{source ? 'Edit Source' : 'Add New Source'}</DialogTitle>
           <DialogDescription>
-            Add a new platform or institution (e.g., moomoo, IBKR, DBS).
+            {source ? 'Update the details for this existing platform or institution.' : 'Add a new platform or institution (e.g., moomoo, IBKR, DBS).'}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -147,7 +159,7 @@ export function SourceForm({
               Cancel
             </Button>
             <Button type="submit" disabled={loading} className="w-full sm:w-auto">
-              {loading ? 'Creating...' : 'Create'}
+              {loading ? (source ? 'Updating...' : 'Creating...') : (source ? 'Update' : 'Create')}
             </Button>
           </DialogFooter>
         </form>

@@ -75,10 +75,10 @@ export function useAssetCategories() {
     await fetchCategories();
   };
 
-  return { 
-    categories, 
-    loading, 
-    error, 
+  return {
+    categories,
+    loading,
+    error,
     refetch: fetchCategories,
     createCategory,
     updateCategory,
@@ -131,6 +131,20 @@ export function useAssetSources(categoryId?: string) {
     return data;
   };
 
+  const updateSource = async (id: string, updates: Partial<CreateAssetSource>) => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('asset_sources')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    await fetchSources();
+    return data;
+  };
+
   const deleteSource = async (id: string) => {
     const supabase = createClient();
     const { error } = await supabase.from('asset_sources').delete().eq('id', id);
@@ -138,7 +152,7 @@ export function useAssetSources(categoryId?: string) {
     await fetchSources();
   };
 
-  return { sources, loading, error, refetch: fetchSources, createSource, deleteSource };
+  return { sources, loading, error, refetch: fetchSources, createSource, updateSource, deleteSource };
 }
 
 export function useAssets() {

@@ -24,7 +24,7 @@ import { AssetForm } from '@/components/forms/AssetForm';
 import { SourceForm } from '@/components/forms/SourceForm';
 import { AssetCategoryForm } from '@/components/forms/AssetCategoryForm';
 import { useAssets, useAssetCategories, useAssetSources } from '@/hooks/useAssets';
-import { Asset, AssetCategory, CreateAsset, CreateAssetCategory, CreateAssetSource, UpdateAsset } from '@/lib/supabase/types';
+import { Asset, AssetCategory, AssetSource, CreateAsset, CreateAssetCategory, CreateAssetSource, UpdateAsset } from '@/lib/supabase/types';
 import { Plus, MoreHorizontal, Pencil, Trash2, Building, FolderTree, Settings, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -32,13 +32,14 @@ import { format } from 'date-fns';
 export default function AssetsPage() {
   const { assets, loading, createAsset, updateAsset, deleteAsset, refetch } = useAssets();
   const { categories, createCategory, updateCategory, deleteCategory, refetch: refetchCategories } = useAssetCategories();
-  const { sources, createSource, deleteSource, refetch: refetchSources } = useAssetSources();
+  const { sources, createSource, updateSource, deleteSource, refetch: refetchSources } = useAssetSources();
 
   const [assetFormOpen, setAssetFormOpen] = useState(false);
   const [sourceFormOpen, setSourceFormOpen] = useState(false);
   const [categoryFormOpen, setCategoryFormOpen] = useState(false);
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [editingCategory, setEditingCategory] = useState<AssetCategory | null>(null);
+  const [editingSource, setEditingSource] = useState<AssetSource | null>(null);
   const [selectedTab, setSelectedTab] = useState('all');
   const [mainTab, setMainTab] = useState('assets');
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
@@ -98,6 +99,13 @@ export default function AssetsPage() {
   const handleCreateSource = async (data: CreateAssetSource) => {
     await createSource(data);
     refetchSources();
+  };
+
+  const handleUpdateSource = async (data: CreateAssetSource) => {
+    if (editingSource) {
+      await updateSource(editingSource.id, data);
+      setEditingSource(null);
+    }
   };
 
   const handleDeleteSource = async (id: string) => {
@@ -395,7 +403,7 @@ export default function AssetsPage() {
                     </CardTitle>
                     <CardDescription className="text-xs">Platforms & institutions</CardDescription>
                   </div>
-                  <Button size="sm" variant="outline" onClick={() => setSourceFormOpen(true)}>
+                  <Button size="sm" variant="outline" onClick={() => { setEditingSource(null); setSourceFormOpen(true); }}>
                     <Plus className="mr-1 h-3 w-3" />Add
                   </Button>
                 </div>
@@ -410,9 +418,19 @@ export default function AssetsPage() {
                           {categories.find(c => c.id === src.category_id)?.name}
                         </p>
                       </div>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDeleteSource(src.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-4 w-4" /></Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => { setEditingSource(src); setSourceFormOpen(true); }}>
+                            <Pencil className="mr-2 h-4 w-4" />Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDeleteSource(src.id)} className="text-destructive">
+                            <Trash2 className="mr-2 h-4 w-4" />Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   ))}
                   {sources.length === 0 && (
@@ -437,9 +455,10 @@ export default function AssetsPage() {
       />
       <SourceForm
         open={sourceFormOpen}
-        onOpenChange={setSourceFormOpen}
+        onOpenChange={(open) => { setSourceFormOpen(open); if (!open) setEditingSource(null); }}
         categories={categories}
-        onSubmit={handleCreateSource}
+        onSubmit={editingSource ? handleUpdateSource : handleCreateSource}
+        source={editingSource}
       />
       <AssetCategoryForm
         open={categoryFormOpen}
