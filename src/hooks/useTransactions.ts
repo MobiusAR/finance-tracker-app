@@ -165,7 +165,7 @@ export function useTransactions(month?: Date) {
   };
 }
 
-export function useSpendingSummary(months: number = 1) {
+export function useSpendingSummary(months: number = 1, baseMonth?: Date) {
   const [summary, setSummary] = useState<SpendingSummary[]>([]);
   const [totalSpending, setTotalSpending] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -175,9 +175,10 @@ export function useSpendingSummary(months: number = 1) {
     try {
       setLoading(true);
       const supabase = createClient();
-      
-      const startDate = format(startOfMonth(subMonths(new Date(), months - 1)), 'yyyy-MM-dd');
-      const endDate = format(endOfMonth(new Date()), 'yyyy-MM-dd');
+
+      const anchor = baseMonth || new Date();
+      const startDate = format(startOfMonth(subMonths(anchor, months - 1)), 'yyyy-MM-dd');
+      const endDate = format(endOfMonth(anchor), 'yyyy-MM-dd');
 
       const { data, error } = await supabase
         .from('transactions')
@@ -220,7 +221,7 @@ export function useSpendingSummary(months: number = 1) {
     } finally {
       setLoading(false);
     }
-  }, [months]);
+  }, [months, baseMonth]);
 
   useEffect(() => {
     fetchSummary();

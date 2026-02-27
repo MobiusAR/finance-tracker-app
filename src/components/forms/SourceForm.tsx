@@ -149,9 +149,11 @@ export function SourceForm({
                 step="0.01"
                 value={fxSpreadMargin}
                 onChange={(e) => setFxSpreadMargin(e.target.value)}
-                placeholder="e.g. 0.00 for IBKR, -0.35 for Moomoo"
+                placeholder="e.g. 0 for IBKR, -0.35 for Moomoo"
               />
-              <p className="text-xs text-muted-foreground">Markup applied to spot rate for automated tracking.</p>
+              <p className="text-xs text-muted-foreground">
+                How much worse the brokerage rate is vs spot rate. E.g. -0.35 means 0.35% less than market rate when converting USD→SGD. Use 0 for brokerages with no FX markup.
+              </p>
             </div>
           </div>
           <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:gap-0">

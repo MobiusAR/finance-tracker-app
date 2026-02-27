@@ -24,7 +24,7 @@ export default function SpendingPage() {
   const { transactions, loading, createTransaction, updateTransaction, deleteTransaction } =
     useTransactions(currentMonth);
   const { categories } = useSpendingCategories();
-  const { summary, totalSpending } = useSpendingSummary(1);
+  const { summary, totalSpending } = useSpendingSummary(1, currentMonth);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);

@@ -91,8 +91,8 @@ export async function GET(request: Request) {
                 exchangeRateToSgd = fxMap[pair] || 1;
             }
 
-            // SGD Value calculation
-            const sgdValue = asset.shares * latestPrice * (exchangeRateToSgd * (1 + Number(fxSpread)));
+            // SGD Value calculation — fxSpread is stored as a percentage (e.g. -0.35 means -0.35%)
+            const sgdValue = asset.shares * latestPrice * (exchangeRateToSgd * (1 + Number(fxSpread) / 100));
 
             // Round to 2 decimal places for database cleanliness
             const roundedSgdValue = Math.round(sgdValue * 100) / 100;
@@ -127,7 +127,7 @@ export async function GET(request: Request) {
                 const fxSpread = sourceData?.fx_spread_margin || 0;
                 const pair = `${assetCurrency}SGD=X`.toUpperCase();
                 const exchangeRateToSgd = assetCurrency !== 'SGD' ? (fxMap[pair] || 1) : 1;
-                const sgdValue = asset.shares * latestPrice * (exchangeRateToSgd * (1 + Number(fxSpread)));
+                const sgdValue = asset.shares * latestPrice * (exchangeRateToSgd * (1 + Number(fxSpread) / 100));
 
                 return {
                     id: asset.id,
