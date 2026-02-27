@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import {
   Transaction,
   SpendingCategory,
+  BudgetSurplus,
   CreateTransaction,
   UpdateTransaction,
   CreateSpendingCategory,
@@ -308,4 +309,41 @@ export function useBudgetStatus() {
   }, [fetchBudgetStatus]);
 
   return { budgetStatus, loading, error, refetch: fetchBudgetStatus };
+}
+
+export function useBudgetSurplus() {
+  const [monthlyBreakdown, setMonthlyBreakdown] = useState<BudgetSurplus[]>([]);
+  const [totalSurplus, setTotalSurplus] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchSurplus = useCallback(async () => {
+    try {
+      setLoading(true);
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from('budget_surplus')
+        .select('*')
+        .order('month', { ascending: true });
+
+      if (error) throw error;
+
+      const rows = (data || []) as BudgetSurplus[];
+      setMonthlyBreakdown(rows);
+      setTotalSurplus(
+        rows.reduce((sum, r) => sum + Number(r.surplus_amount), 0)
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch budget surplus');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSurplus();
+  }, [fetchSurplus]);
+
+  return { monthlyBreakdown, totalSurplus, loading, error, refetch: fetchSurplus };
 }

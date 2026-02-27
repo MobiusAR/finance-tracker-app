@@ -1,10 +1,18 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,7 +23,7 @@ import { SpendingChart } from '@/components/charts/SpendingChart';
 import { TransactionForm } from '@/components/forms/TransactionForm';
 import { useTransactions, useSpendingCategories, useSpendingSummary } from '@/hooks/useTransactions';
 import { Transaction, CreateTransaction, UpdateTransaction } from '@/lib/supabase/types';
-import { Plus, MoreHorizontal, Pencil, Trash2, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
+import { Plus, MoreHorizontal, Pencil, Trash2, ChevronLeft, ChevronRight, ChevronDown, Search, X, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, addMonths, subMonths } from 'date-fns';
 
@@ -30,6 +38,44 @@ export default function SpendingPage() {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [openDates, setOpenDates] = useState<Set<string>>(new Set());
   const prevMonthRef = useRef<string>('');
+
+  // Search & filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [amountMin, setAmountMin] = useState('');
+  const [amountMax, setAmountMax] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+
+  const hasActiveFilters = searchQuery || categoryFilter !== 'all' || amountMin || amountMax;
+
+  const clearAllFilters = () => {
+    setSearchQuery('');
+    setCategoryFilter('all');
+    setAmountMin('');
+    setAmountMax('');
+  };
+
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter((t) => {
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const matchDesc = t.description?.toLowerCase().includes(q);
+        const matchCategory = t.category?.name?.toLowerCase().includes(q);
+        const matchAmount = formatCurrency(t.amount).includes(q);
+        if (!matchDesc && !matchCategory && !matchAmount) return false;
+      }
+      if (categoryFilter !== 'all') {
+        if (categoryFilter === 'uncategorized') {
+          if (t.category_id) return false;
+        } else {
+          if (t.category_id !== categoryFilter) return false;
+        }
+      }
+      if (amountMin && Number(t.amount) < Number(amountMin)) return false;
+      if (amountMax && Number(t.amount) > Number(amountMax)) return false;
+      return true;
+    });
+  }, [transactions, searchQuery, categoryFilter, amountMin, amountMax]);
 
   // Auto-expand the most recent date when month changes
   useEffect(() => {
@@ -105,8 +151,8 @@ export default function SpendingPage() {
     setCurrentMonth(new Date());
   };
 
-  // Group transactions by date
-  const transactionsByDate = transactions.reduce((acc, transaction) => {
+  // Group filtered transactions by date
+  const transactionsByDate = filteredTransactions.reduce((acc, transaction) => {
     const date = transaction.transaction_date;
     if (!acc[date]) {
       acc[date] = [];
@@ -115,8 +161,13 @@ export default function SpendingPage() {
     return acc;
   }, {} as Record<string, Transaction[]>);
 
-  // Calculate monthly total
+  // Calculate monthly total (always from all transactions, not filtered)
   const monthlyTotal = transactions.reduce(
+    (sum, transaction) => sum + Number(transaction.amount),
+    0
+  );
+
+  const filteredTotal = filteredTransactions.reduce(
     (sum, transaction) => sum + Number(transaction.amount),
     0
   );
@@ -194,6 +245,113 @@ export default function SpendingPage() {
         </Card>
       </div>
 
+      {/* Search & Filters */}
+      {!loading && transactions.length > 0 && (
+        <div className="mb-4 space-y-3 sm:mb-6">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search transactions..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 text-sm"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <Button
+              variant={showFilters ? 'default' : 'outline'}
+              size="icon"
+              className="h-9 w-9 shrink-0"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {showFilters && (
+            <div className="flex flex-col gap-2 rounded-lg border bg-card p-3 sm:flex-row sm:items-end sm:gap-3 sm:p-4">
+              <div className="flex-1 space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Category</label>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="All categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All categories</SelectItem>
+                    <SelectItem value="uncategorized">Uncategorized</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="h-2.5 w-2.5 rounded-full"
+                            style={{ backgroundColor: cat.color }}
+                          />
+                          {cat.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex gap-2 flex-1">
+                <div className="flex-1 space-y-1">
+                  <label className="text-xs font-medium text-muted-foreground">Min ($)</label>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={amountMin}
+                    onChange={(e) => setAmountMin(e.target.value)}
+                    className="h-9 text-sm"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <label className="text-xs font-medium text-muted-foreground">Max ($)</label>
+                  <Input
+                    type="number"
+                    placeholder="Any"
+                    value={amountMax}
+                    onChange={(e) => setAmountMax(e.target.value)}
+                    className="h-9 text-sm"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+              </div>
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={clearAllFilters} className="shrink-0 text-xs">
+                  <X className="mr-1 h-3 w-3" />
+                  Clear
+                </Button>
+              )}
+            </div>
+          )}
+
+          {hasActiveFilters && (
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>
+                Showing {filteredTransactions.length} of {transactions.length} transactions
+                {filteredTransactions.length !== transactions.length && (
+                  <> &middot; {formatCurrency(filteredTotal)}</>
+                )}
+              </span>
+              <button onClick={clearAllFilters} className="underline hover:text-foreground">
+                Clear filters
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Transactions List */}
       {loading ? (
         <Card>
@@ -208,6 +366,17 @@ export default function SpendingPage() {
             <Button size="sm" onClick={() => setFormOpen(true)}>
               <Plus className="mr-1 h-4 w-4" />
               Add Transaction
+            </Button>
+          </CardContent>
+        </Card>
+      ) : filteredTransactions.length === 0 ? (
+        <Card>
+          <CardContent className="flex h-40 flex-col items-center justify-center gap-3 sm:h-64 sm:gap-4">
+            <Search className="h-8 w-8 text-muted-foreground/50" />
+            <p className="text-sm text-muted-foreground">No transactions match your filters</p>
+            <Button size="sm" variant="outline" onClick={clearAllFilters}>
+              <X className="mr-1 h-4 w-4" />
+              Clear filters
             </Button>
           </CardContent>
         </Card>

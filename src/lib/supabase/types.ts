@@ -17,7 +17,6 @@ export interface AssetSource {
   name: string;
   category_id: string;
   description: string | null;
-  fx_spread_margin: number;
   created_at: string;
   updated_at: string;
   // Joined data
@@ -32,9 +31,6 @@ export interface Asset {
   current_value: number;
   currency: string;
   notes: string | null;
-  ticker_symbol: string | null;
-  shares: number | null;
-  is_auto_tracked: boolean;
   created_at: string;
   updated_at: string;
   // Joined data
@@ -62,6 +58,47 @@ export interface Transaction {
   updated_at: string;
   // Joined data
   category?: SpendingCategory;
+}
+
+export interface BudgetSurplus {
+  id: string;
+  month: string;
+  total_budget: number;
+  total_spent: number;
+  surplus_amount: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RecurringTransaction {
+  id: string;
+  category_id: string | null;
+  amount: number;
+  description: string | null;
+  frequency: 'weekly' | 'monthly' | 'yearly';
+  day_of_week: number | null;
+  day_of_month: number | null;
+  month_of_year: number | null;
+  start_date: string;
+  end_date: string | null;
+  is_active: boolean;
+  last_generated_date: string | null;
+  created_at: string;
+  updated_at: string;
+  // Joined data
+  category?: SpendingCategory;
+}
+
+export interface CreateRecurringTransaction {
+  category_id?: string;
+  amount: number;
+  description?: string;
+  frequency: 'weekly' | 'monthly' | 'yearly';
+  day_of_week?: number;
+  day_of_month?: number;
+  month_of_year?: number;
+  start_date?: string;
+  end_date?: string;
 }
 
 export interface NetWorthHistory {
@@ -93,7 +130,6 @@ export interface CreateAssetSource {
   name: string;
   category_id: string;
   description?: string;
-  fx_spread_margin?: number;
 }
 
 export interface CreateAsset {
@@ -103,9 +139,6 @@ export interface CreateAsset {
   current_value: number;
   currency?: string;
   notes?: string;
-  ticker_symbol?: string;
-  shares?: number;
-  is_auto_tracked?: boolean;
 }
 
 export interface UpdateAsset {
@@ -115,9 +148,6 @@ export interface UpdateAsset {
   current_value?: number;
   currency?: string;
   notes?: string;
-  ticker_symbol?: string;
-  shares?: number;
-  is_auto_tracked?: boolean;
 }
 
 export interface CreateSpendingCategory {
@@ -168,39 +198,6 @@ export interface MonthlySpending {
   byCategory: SpendingSummary[];
 }
 
-export interface PersonalLoan {
-  id: string;
-  borrower_name: string;
-  amount: number;
-  currency: string;
-  status: 'active' | 'repaid' | 'defaulted';
-  date_lent: string;
-  due_date: string | null;
-  reason: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CreatePersonalLoan {
-  borrower_name: string;
-  amount: number;
-  currency?: string;
-  status?: 'active' | 'repaid' | 'defaulted';
-  date_lent: string;
-  due_date?: string | null;
-  reason?: string | null;
-}
-
-export interface UpdatePersonalLoan {
-  borrower_name?: string;
-  amount?: number;
-  currency?: string;
-  status?: 'active' | 'repaid' | 'defaulted';
-  date_lent?: string;
-  due_date?: string | null;
-  reason?: string | null;
-}
-
 // Supabase Database type definition
 export interface Database {
   public: {
@@ -240,10 +237,15 @@ export interface Database {
         Insert: Omit<AssetSnapshot, 'id' | 'created_at'> & { id?: string };
         Update: Partial<Omit<AssetSnapshot, 'id' | 'created_at'>>;
       };
-      personal_loans: {
-        Row: PersonalLoan;
-        Insert: CreatePersonalLoan & { id?: string };
-        Update: UpdatePersonalLoan;
+      budget_surplus: {
+        Row: BudgetSurplus;
+        Insert: Omit<BudgetSurplus, 'id' | 'created_at' | 'updated_at'> & { id?: string };
+        Update: Partial<Omit<BudgetSurplus, 'id' | 'created_at' | 'updated_at'>>;
+      };
+      recurring_transactions: {
+        Row: RecurringTransaction;
+        Insert: CreateRecurringTransaction & { id?: string };
+        Update: Partial<CreateRecurringTransaction>;
       };
     };
   };

@@ -12,15 +12,16 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { CategoryForm } from '@/components/forms/CategoryForm';
-import { useSpendingCategories, useBudgetStatus } from '@/hooks/useTransactions';
+import { useSpendingCategories, useBudgetStatus, useBudgetSurplus } from '@/hooks/useTransactions';
 import { SpendingCategory, CreateSpendingCategory } from '@/lib/supabase/types';
-import { Plus, MoreHorizontal, Pencil, Trash2, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Plus, MoreHorizontal, Pencil, Trash2, AlertTriangle, CheckCircle, PiggyBank } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 export default function CategoriesPage() {
   const { createCategory, updateCategory, deleteCategory } = useSpendingCategories();
   const { budgetStatus, loading, refetch } = useBudgetStatus();
+  const { totalSurplus, monthlyBreakdown, loading: surplusLoading } = useBudgetSurplus();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<SpendingCategory | null>(null);
@@ -87,7 +88,7 @@ export default function CategoriesPage() {
       />
 
       {/* Budget Summary Cards */}
-      <div className="mb-4 grid grid-cols-2 gap-3 sm:mb-6 sm:gap-4 md:grid-cols-3">
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:mb-6 sm:gap-4 md:grid-cols-4">
         <Card className="border-l-4 border-l-primary">
           <CardHeader className="p-3 pb-1 sm:p-6 sm:pb-2">
             <CardTitle className="text-xs font-medium sm:text-sm">Monthly Budget</CardTitle>
@@ -112,7 +113,7 @@ export default function CategoriesPage() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-2 border-l-4 border-l-sage md:col-span-1">
+        <Card className="border-l-4 border-l-sage">
           <CardHeader className="p-3 pb-1 sm:p-6 sm:pb-2">
             <CardTitle className="text-xs font-medium sm:text-sm">Status</CardTitle>
           </CardHeader>
@@ -127,6 +128,37 @@ export default function CategoriesPage() {
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-sage sm:h-5 sm:w-5" />
                 <span className="text-lg font-bold text-sage sm:text-2xl">All good!</span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-2 border-l-4 border-l-primary md:col-span-1">
+          <CardHeader className="p-3 pb-1 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs font-medium sm:text-sm">Budget Surplus</CardTitle>
+          </CardHeader>
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            {surplusLoading ? (
+              <div className="text-lg font-bold sm:text-2xl">...</div>
+            ) : monthlyBreakdown.length === 0 ? (
+              <div>
+                <div className="flex items-center gap-2">
+                  <PiggyBank className="h-4 w-4 text-muted-foreground sm:h-5 sm:w-5" />
+                  <span className="text-lg font-bold text-muted-foreground sm:text-2xl">-</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground sm:text-xs">Starts Mar 2026</p>
+              </div>
+            ) : (
+              <div>
+                <div className="flex items-center gap-2">
+                  <PiggyBank className={`h-4 w-4 sm:h-5 sm:w-5 ${totalSurplus >= 0 ? 'text-sage' : 'text-destructive'}`} />
+                  <span className={`text-lg font-bold sm:text-2xl ${totalSurplus >= 0 ? 'text-sage' : 'text-destructive'}`}>
+                    {formatCurrency(Math.abs(totalSurplus))}
+                  </span>
+                </div>
+                <p className="text-[10px] text-muted-foreground sm:text-xs">
+                  {totalSurplus >= 0 ? 'Accumulated savings' : 'Overspent'} &middot; since Mar 2026
+                </p>
               </div>
             )}
           </CardContent>
