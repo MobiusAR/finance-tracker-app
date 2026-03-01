@@ -27,6 +27,15 @@ import { Plus, MoreHorizontal, Pencil, Trash2, ChevronLeft, ChevronRight, Chevro
 import { toast } from 'sonner';
 import { format, addMonths, subMonths } from 'date-fns';
 
+export const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('en-SG', {
+    style: 'currency',
+    currency: 'SGD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+};
+
 export default function SpendingPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const { transactions, loading, createTransaction, updateTransaction, deleteTransaction } =
@@ -104,14 +113,7 @@ export default function SpendingPage() {
     });
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-SG', {
-      style: 'currency',
-      currency: 'SGD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value);
-  };
+
 
   const handleCreateTransaction = async (data: CreateTransaction | UpdateTransaction) => {
     await createTransaction(data as CreateTransaction);
