@@ -59,9 +59,9 @@ export default function SpendingPage() {
     return transactions.filter((t) => {
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
-        const matchDesc = t.description?.toLowerCase().includes(q);
-        const matchCategory = t.category?.name?.toLowerCase().includes(q);
-        const matchAmount = formatCurrency(t.amount).includes(q);
+        const matchDesc = t.description ? t.description.toLowerCase().includes(q) : false;
+        const matchCategory = t.category?.name ? t.category.name.toLowerCase().includes(q) : false;
+        const matchAmount = t.amount ? formatCurrency(t.amount).includes(q) : false;
         if (!matchDesc && !matchCategory && !matchAmount) return false;
       }
       if (categoryFilter !== 'all') {
@@ -404,9 +404,8 @@ export default function SpendingPage() {
                       >
                         <div className="flex items-center gap-2">
                           <ChevronDown
-                            className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform duration-200 ${
-                              isOpen ? '' : '-rotate-90'
-                            }`}
+                            className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform duration-200 ${isOpen ? '' : '-rotate-90'
+                              }`}
                           />
                           <span className="text-xs sm:text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                             {format(new Date(date), 'EEE, MMM d')}
