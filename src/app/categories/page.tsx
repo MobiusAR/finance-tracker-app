@@ -153,7 +153,7 @@ export default function CategoriesPage() {
           <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
             {surplusLoading ? (
               <div className="text-lg font-bold sm:text-2xl">...</div>
-            ) : monthlyBreakdown.length === 0 ? (
+            ) : (monthlyBreakdown.length === 0 && (!config?.initial_balance || config.initial_balance === 0)) ? (
               <div>
                 <div className="flex items-center gap-2">
                   <PiggyBank className="h-4 w-4 text-muted-foreground sm:h-5 sm:w-5" />
@@ -179,7 +179,9 @@ export default function CategoriesPage() {
                   </Button>
                 </div>
                 <p className="text-[10px] text-muted-foreground sm:text-xs">
-                  {totalSurplus >= 0 ? 'Accumulated savings' : 'Overspent'} &middot; since Mar 2026
+                  {monthlyBreakdown.length === 0
+                    ? 'Base Initial Balance'
+                    : `${totalSurplus + (config?.initial_balance || 0) >= 0 ? 'Accumulated savings' : 'Overspent'} · since Mar 2026`}
                 </p>
               </div>
             )}
