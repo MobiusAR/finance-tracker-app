@@ -11,6 +11,8 @@ import {
   CreateSpendingCategory,
   SpendingSummary,
   SurplusConfig,
+  RecurringTransaction,
+  CreateRecurringTransaction,
 } from '@/lib/supabase/types';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 
@@ -406,4 +408,77 @@ export async function updateSurplusManualAdjustment(id: string, manual_adjustmen
 
   if (error) throw error;
   return data;
+}
+
+export function useRecurringTransactions() {
+  const [recurringTransactions, setRecurringTransactions] = useState<RecurringTransaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchRecurringTransactions = useCallback(async () => {
+    try {
+      setLoading(true);
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from('recurring_transactions')
+        .select('*, category:spending_categories(*)')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setRecurringTransactions((data as RecurringTransaction[]) || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch recurring transactions');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRecurringTransactions();
+  }, [fetchRecurringTransactions]);
+
+  const createRecurringTransaction = async (transaction: CreateRecurringTransaction) => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('recurring_transactions')
+      .insert(transaction)
+      .select('*, category:spending_categories(*)')
+      .single();
+
+    if (error) throw error;
+    await fetchRecurringTransactions();
+    return data as RecurringTransaction;
+  };
+
+  const updateRecurringTransaction = async (id: string, updates: Partial<CreateRecurringTransaction> & { is_active?: boolean }) => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('recurring_transactions')
+      .update(updates)
+      .eq('id', id)
+      .select('*, category:spending_categories(*)')
+      .single();
+
+    if (error) throw error;
+    await fetchRecurringTransactions();
+    return data as RecurringTransaction;
+  };
+
+  const deleteRecurringTransaction = async (id: string) => {
+    const supabase = createClient();
+    const { error } = await supabase.from('recurring_transactions').delete().eq('id', id);
+    if (error) throw error;
+    await fetchRecurringTransactions();
+  };
+
+  return {
+    recurringTransactions,
+    loading,
+    error,
+    refetch: fetchRecurringTransactions,
+    createRecurringTransaction,
+    updateRecurringTransaction,
+    deleteRecurringTransaction,
+  };
 }

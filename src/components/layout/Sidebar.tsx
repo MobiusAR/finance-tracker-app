@@ -13,6 +13,7 @@ import {
   TrendingUp,
   HandCoins,
   LogOut,
+  CalendarDays,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -22,6 +23,7 @@ const navigation = [
   { name: 'Loans', href: '/loans', icon: HandCoins },
   { name: 'Spending', href: '/spending', icon: Receipt },
   { name: 'Categories', href: '/categories', icon: Tags },
+  { name: 'Subscriptions', href: '/subscriptions', icon: CalendarDays },
 ];
 
 export function Sidebar() {

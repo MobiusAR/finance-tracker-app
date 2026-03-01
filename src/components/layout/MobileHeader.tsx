@@ -48,6 +48,18 @@ export function MobileHeader() {
           </SheetHeader>
           <div className="mt-6 flex flex-col gap-4">
             <Button
+              variant="ghost"
+              className="justify-start"
+              onClick={() => {
+                router.push('/subscriptions');
+                setOpen(false);
+              }}
+            >
+              <Wallet className="mr-2 h-4 w-4" />
+              Subscriptions
+            </Button>
+
+            <Button
               variant="outline"
               className="justify-start"
               onClick={() => {
