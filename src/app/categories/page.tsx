@@ -12,18 +12,23 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { CategoryForm } from '@/components/forms/CategoryForm';
-import { useSpendingCategories, useBudgetStatus, useBudgetSurplus } from '@/hooks/useTransactions';
+import { useSpendingCategories, useBudgetStatus, useBudgetSurplus, useSurplusConfig, updateSurplusManualAdjustment } from '@/hooks/useTransactions';
 import { SpendingCategory, CreateSpendingCategory } from '@/lib/supabase/types';
-import { Plus, MoreHorizontal, Pencil, Trash2, AlertTriangle, CheckCircle, PiggyBank } from 'lucide-react';
+import { Plus, MoreHorizontal, Pencil, Trash2, AlertTriangle, CheckCircle, PiggyBank, Settings, FileEdit } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { SurplusConfigForm } from '@/components/forms/SurplusConfigForm';
+import { SurplusAdjustmentForm } from '@/components/forms/SurplusAdjustmentForm';
 
 export default function CategoriesPage() {
   const { createCategory, updateCategory, deleteCategory } = useSpendingCategories();
   const { budgetStatus, loading, refetch } = useBudgetStatus();
-  const { totalSurplus, monthlyBreakdown, loading: surplusLoading } = useBudgetSurplus();
+  const { totalSurplus, monthlyBreakdown, loading: surplusLoading, refetch: refetchSurplus } = useBudgetSurplus();
+  const { config, updateConfig, loading: configLoading } = useSurplusConfig();
 
   const [formOpen, setFormOpen] = useState(false);
+  const [configOpen, setConfigOpen] = useState(false);
+  const [adjustmentOpen, setAdjustmentOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<SpendingCategory | null>(null);
 
   const formatCurrency = (value: number | null) => {
@@ -133,9 +138,17 @@ export default function CategoriesPage() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-2 border-l-4 border-l-primary md:col-span-1">
-          <CardHeader className="p-3 pb-1 sm:p-6 sm:pb-2">
+        <Card className="col-span-2 border-l-4 border-l-primary md:col-span-1 relative group">
+          <CardHeader className="p-3 pb-1 sm:p-6 sm:pb-2 flex flex-row items-center justify-between">
             <CardTitle className="text-xs font-medium sm:text-sm">Budget Surplus</CardTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2 sm:top-4 sm:right-4"
+              onClick={() => setConfigOpen(true)}
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
           </CardHeader>
           <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
             {surplusLoading ? (
@@ -155,6 +168,15 @@ export default function CategoriesPage() {
                   <span className={`text-lg font-bold sm:text-2xl ${totalSurplus >= 0 ? 'text-sage' : 'text-destructive'}`}>
                     {formatCurrency(Math.abs(totalSurplus))}
                   </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-5 w-5 ml-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => setAdjustmentOpen(true)}
+                    title="Manual Adjustment"
+                  >
+                    <FileEdit className="h-3.5 w-3.5 text-muted-foreground" />
+                  </Button>
                 </div>
                 <p className="text-[10px] text-muted-foreground sm:text-xs">
                   {totalSurplus >= 0 ? 'Accumulated savings' : 'Overspent'} &middot; since Mar 2026
@@ -260,7 +282,7 @@ export default function CategoriesPage() {
                       </span>
                     </div>
                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary sm:h-2">
-                      <div 
+                      <div
                         className={`h-full rounded-full transition-all duration-500 ${getProgressColor(percentUsed)}`}
                         style={{ width: `${Math.min(percentUsed || 0, 100)}%` }}
                       />
@@ -293,6 +315,23 @@ export default function CategoriesPage() {
         }}
         onSubmit={editingCategory ? handleUpdateCategory : handleCreateCategory}
         category={editingCategory}
+      />
+
+      <SurplusConfigForm
+        open={configOpen}
+        onOpenChange={setConfigOpen}
+        onSubmit={updateConfig}
+        config={config}
+      />
+
+      <SurplusAdjustmentForm
+        open={adjustmentOpen}
+        onOpenChange={setAdjustmentOpen}
+        onSubmit={async (id, val) => {
+          await updateSurplusManualAdjustment(id, val);
+          refetchSurplus();
+        }}
+        surplusList={monthlyBreakdown}
       />
     </div>
   );

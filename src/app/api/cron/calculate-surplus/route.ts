@@ -41,8 +41,9 @@ export async function GET(request: Request) {
         const endDate = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0)
             .toISOString().slice(0, 10);
 
-        // Fetch total budget (sum of all category budgets) and total spending in parallel
-        const [categoriesResult, transactionsResult] = await Promise.all([
+        // Fetch global config, total budget (sum of all category budgets) and total spending in parallel
+        const [configResult, categoriesResult, transactionsResult] = await Promise.all([
+            supabase.from('surplus_config').select('*').eq('is_singleton', true).single(),
             supabase.from('spending_categories').select('budget_amount'),
             supabase
                 .from('transactions')
@@ -54,6 +55,10 @@ export async function GET(request: Request) {
         if (categoriesResult.error) throw categoriesResult.error;
         if (transactionsResult.error) throw transactionsResult.error;
 
+        // If no config exists, default to 0 for income and savings
+        const config = configResult.data || { monthly_income: 0, monthly_savings_target: 0 };
+        const discretionaryAllowance = Number(config.monthly_income) - Number(config.monthly_savings_target);
+
         const totalBudget = (categoriesResult.data || []).reduce(
             (sum, c) => sum + (Number(c.budget_amount) || 0),
             0
@@ -64,7 +69,17 @@ export async function GET(request: Request) {
             0
         );
 
-        const surplusAmount = Math.round((totalBudget - totalSpent) * 100) / 100;
+        // Fetch existing surplus record to preserve manual_adjustments if it exists
+        const { data: existingSurplus } = await supabase
+            .from('budget_surplus')
+            .select('manual_adjustments')
+            .eq('month', monthStr)
+            .single();
+
+        const manualAdjustments = existingSurplus ? Number(existingSurplus.manual_adjustments) : 0;
+
+        // Revised surplus calculation
+        const surplusAmount = Math.round((discretionaryAllowance - totalSpent + manualAdjustments) * 100) / 100;
 
         // Upsert into budget_surplus (idempotent)
         const { error: upsertError } = await supabase
@@ -75,6 +90,8 @@ export async function GET(request: Request) {
                     total_budget: Math.round(totalBudget * 100) / 100,
                     total_spent: Math.round(totalSpent * 100) / 100,
                     surplus_amount: surplusAmount,
+                    discretionary_allowance: discretionaryAllowance,
+                    manual_adjustments: manualAdjustments
                 },
                 { onConflict: 'month' }
             );
@@ -84,8 +101,9 @@ export async function GET(request: Request) {
         return NextResponse.json({
             success: true,
             month: monthStr,
-            total_budget: totalBudget,
+            discretionary_allowance: discretionaryAllowance,
             total_spent: totalSpent,
+            manual_adjustments: manualAdjustments,
             surplus_amount: surplusAmount,
         });
     } catch (error) {

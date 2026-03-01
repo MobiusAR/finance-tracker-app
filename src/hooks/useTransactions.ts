@@ -10,6 +10,7 @@ import {
   UpdateTransaction,
   CreateSpendingCategory,
   SpendingSummary,
+  SurplusConfig,
 } from '@/lib/supabase/types';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 
@@ -94,7 +95,7 @@ export function useTransactions(month?: Date) {
     try {
       setLoading(true);
       const supabase = createClient();
-      
+
       let query = supabase
         .from('transactions')
         .select('*, category:spending_categories(*)')
@@ -249,7 +250,7 @@ export function useBudgetStatus() {
     try {
       setLoading(true);
       const supabase = createClient();
-      
+
       // Get current month's date range
       const startDate = format(startOfMonth(new Date()), 'yyyy-MM-dd');
       const endDate = format(endOfMonth(new Date()), 'yyyy-MM-dd');
@@ -346,4 +347,63 @@ export function useBudgetSurplus() {
   }, [fetchSurplus]);
 
   return { monthlyBreakdown, totalSurplus, loading, error, refetch: fetchSurplus };
+}
+
+export function useSurplusConfig() {
+  const [config, setConfig] = useState<SurplusConfig | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchConfig = useCallback(async () => {
+    try {
+      setLoading(true);
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('surplus_config')
+        .select('*')
+        .eq('is_singleton', true)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error; // Ignoring 0 row errors
+      setConfig(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch surplus config');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchConfig();
+  }, [fetchConfig]);
+
+  const updateConfig = async (monthly_income: number, monthly_savings_target: number) => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('surplus_config')
+      .upsert(
+        { is_singleton: true, monthly_income, monthly_savings_target },
+        { onConflict: 'is_singleton' }
+      )
+      .select()
+      .single();
+    if (error) throw error;
+    setConfig(data);
+    return data;
+  };
+
+  return { config, loading, error, refetch: fetchConfig, updateConfig };
+}
+
+export async function updateSurplusManualAdjustment(id: string, manual_adjustments: number) {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('budget_surplus')
+    .update({ manual_adjustments })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
 }

@@ -70,6 +70,17 @@ export interface BudgetSurplus {
   total_budget: number;
   total_spent: number;
   surplus_amount: number;
+  discretionary_allowance: number;
+  manual_adjustments: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SurplusConfig {
+  id: string;
+  monthly_income: number;
+  monthly_savings_target: number;
+  is_singleton: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -285,6 +296,11 @@ export interface Database {
         Row: BudgetSurplus;
         Insert: Omit<BudgetSurplus, 'id' | 'created_at' | 'updated_at'> & { id?: string };
         Update: Partial<Omit<BudgetSurplus, 'id' | 'created_at' | 'updated_at'>>;
+      };
+      surplus_config: {
+        Row: SurplusConfig;
+        Insert: Omit<SurplusConfig, 'id' | 'created_at' | 'updated_at'> & { id?: string };
+        Update: Partial<Omit<SurplusConfig, 'id' | 'created_at' | 'updated_at'>>;
       };
       recurring_transactions: {
         Row: RecurringTransaction;
