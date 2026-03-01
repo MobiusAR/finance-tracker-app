@@ -17,6 +17,7 @@ export interface AssetSource {
   name: string;
   category_id: string;
   description: string | null;
+  fx_spread_margin: number;
   created_at: string;
   updated_at: string;
   // Joined data
@@ -31,6 +32,9 @@ export interface Asset {
   current_value: number;
   currency: string;
   notes: string | null;
+  ticker_symbol: string | null;
+  shares: number | null;
+  is_auto_tracked: boolean;
   created_at: string;
   updated_at: string;
   // Joined data
@@ -130,6 +134,7 @@ export interface CreateAssetSource {
   name: string;
   category_id: string;
   description?: string;
+  fx_spread_margin?: number;
 }
 
 export interface CreateAsset {
@@ -139,6 +144,9 @@ export interface CreateAsset {
   current_value: number;
   currency?: string;
   notes?: string;
+  ticker_symbol?: string;
+  shares?: number;
+  is_auto_tracked?: boolean;
 }
 
 export interface UpdateAsset {
@@ -148,6 +156,9 @@ export interface UpdateAsset {
   current_value?: number;
   currency?: string;
   notes?: string;
+  ticker_symbol?: string;
+  shares?: number;
+  is_auto_tracked?: boolean;
 }
 
 export interface CreateSpendingCategory {
@@ -169,6 +180,39 @@ export interface UpdateTransaction {
   amount?: number;
   description?: string;
   transaction_date?: string;
+}
+
+export interface PersonalLoan {
+  id: string;
+  borrower_name: string;
+  amount: number;
+  currency: string;
+  status: 'active' | 'repaid' | 'defaulted';
+  date_lent: string;
+  due_date: string | null;
+  reason: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreatePersonalLoan {
+  borrower_name: string;
+  amount: number;
+  currency?: string;
+  status?: 'active' | 'repaid' | 'defaulted';
+  date_lent: string;
+  due_date?: string;
+  reason?: string;
+}
+
+export interface UpdatePersonalLoan {
+  borrower_name?: string;
+  amount?: number;
+  currency?: string;
+  status?: 'active' | 'repaid' | 'defaulted';
+  date_lent?: string;
+  due_date?: string | null;
+  reason?: string | null;
 }
 
 // Aggregated data types for charts
@@ -246,6 +290,11 @@ export interface Database {
         Row: RecurringTransaction;
         Insert: CreateRecurringTransaction & { id?: string };
         Update: Partial<CreateRecurringTransaction>;
+      };
+      personal_loans: {
+        Row: PersonalLoan;
+        Insert: CreatePersonalLoan & { id?: string };
+        Update: UpdatePersonalLoan;
       };
     };
   };
