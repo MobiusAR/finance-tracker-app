@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
+import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +24,7 @@ import { SpendingChart } from '@/components/charts/SpendingChart';
 import { TransactionForm } from '@/components/forms/TransactionForm';
 import { useTransactions, useSpendingCategories, useSpendingSummary } from '@/hooks/useTransactions';
 import { Transaction, CreateTransaction, UpdateTransaction } from '@/lib/supabase/types';
-import { Plus, MoreHorizontal, Pencil, Trash2, ChevronLeft, ChevronRight, ChevronDown, Search, X, SlidersHorizontal } from 'lucide-react';
+import { Plus, MoreHorizontal, Pencil, Trash2, ChevronLeft, ChevronRight, ChevronDown, Search, X, SlidersHorizontal, CalendarDays } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, addMonths, subMonths } from 'date-fns';
 
@@ -196,30 +197,47 @@ export default function SpendingPage() {
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-          {/* Mobile Add Button */}
+          {/* Mobile Buttons */}
+          <div className="flex sm:hidden gap-1.5">
+            <Button
+              variant="outline"
+              size="icon"
+              asChild
+            >
+              <Link href="/subscriptions">
+                <CalendarDays className="h-4 w-4 text-muted-foreground" />
+              </Link>
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                setEditingTransaction(null);
+                setFormOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Desktop Buttons */}
+        <div className="hidden sm:flex gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/subscriptions">
+              <CalendarDays className="mr-2 h-4 w-4" />
+              Subscriptions
+            </Link>
+          </Button>
           <Button
-            size="sm"
-            className="sm:hidden"
             onClick={() => {
               setEditingTransaction(null);
               setFormOpen(true);
             }}
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="mr-2 h-4 w-4" />
+            Add Transaction
           </Button>
         </div>
-
-        {/* Desktop Add Button */}
-        <Button
-          className="hidden sm:flex"
-          onClick={() => {
-            setEditingTransaction(null);
-            setFormOpen(true);
-          }}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Add Transaction
-        </Button>
       </div>
 
       {/* Summary Cards */}
