@@ -73,17 +73,17 @@ export default function Dashboard() {
       />
 
       {/* Summary Cards - 2x2 grid on mobile, 4 cols on desktop */}
-      <div className="mb-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 px-4 md:px-0 md:mb-6">
+      <div className="mb-4 grid grid-cols-2 lg:grid-cols-4 gap-2 px-2 md:gap-4 md:px-0 md:mb-6">
         <Card className="border-l-4 border-l-primary">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
-            <CardTitle className="text-xs font-medium md:text-sm">Net Worth</CardTitle>
-            <Wallet className="h-3 w-3 text-muted-foreground md:h-4 md:w-4" />
+            <CardTitle className="text-[10px] sm:text-xs font-medium md:text-sm truncate mr-1">Net Worth</CardTitle>
+            <Wallet className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
           </CardHeader>
           <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
             {assetsLoading ? (
               <Skeleton className="h-7 w-24 md:h-8 md:w-32" />
             ) : (
-              <div className="text-lg font-bold md:text-2xl">
+              <div className="text-base sm:text-lg font-bold md:text-2xl truncate">
                 {formatCurrency(totalNetWorth)}
               </div>
             )}
@@ -97,14 +97,14 @@ export default function Dashboard() {
 
         <Card className="border-l-4 border-l-sage">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
-            <CardTitle className="text-xs font-medium md:text-sm">Assets</CardTitle>
-            <TrendingUp className="h-3 w-3 text-sage md:h-4 md:w-4" />
+            <CardTitle className="text-[10px] sm:text-xs font-medium md:text-sm truncate mr-1">Assets</CardTitle>
+            <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-sage shrink-0" />
           </CardHeader>
           <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
             {assetsLoading ? (
               <Skeleton className="h-7 w-24 md:h-8 md:w-32" />
             ) : (
-              <div className="text-lg font-bold text-sage md:text-2xl">
+              <div className="text-base sm:text-lg font-bold text-sage md:text-2xl truncate">
                 {formatCurrency(totalAssets)}
               </div>
             )}
@@ -116,14 +116,14 @@ export default function Dashboard() {
 
         <Card className="border-l-4 border-l-destructive">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
-            <CardTitle className="text-xs font-medium md:text-sm">Liabilities</CardTitle>
-            <TrendingDown className="h-3 w-3 text-destructive md:h-4 md:w-4" />
+            <CardTitle className="text-[10px] sm:text-xs font-medium md:text-sm truncate mr-1">Liabilities</CardTitle>
+            <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4 text-destructive shrink-0" />
           </CardHeader>
           <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
             {assetsLoading ? (
               <Skeleton className="h-7 w-24 md:h-8 md:w-32" />
             ) : (
-              <div className="text-lg font-bold text-destructive md:text-2xl">
+              <div className="text-base sm:text-lg font-bold text-destructive md:text-2xl truncate">
                 {formatCurrency(totalLiabilities)}
               </div>
             )}
@@ -135,14 +135,14 @@ export default function Dashboard() {
 
         <Card className="border-l-4 border-l-terracotta">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
-            <CardTitle className="text-xs font-medium md:text-sm">Spending</CardTitle>
-            <CreditCard className="h-3 w-3 text-terracotta md:h-4 md:w-4" />
+            <CardTitle className="text-[10px] sm:text-xs font-medium md:text-sm truncate mr-1">Spending</CardTitle>
+            <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 text-terracotta shrink-0" />
           </CardHeader>
           <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
             {spendingLoading ? (
               <Skeleton className="h-7 w-24 md:h-8 md:w-32" />
             ) : (
-              <div className="text-lg font-bold md:text-2xl">
+              <div className="text-base sm:text-lg font-bold md:text-2xl truncate">
                 {formatCurrency(totalSpending)}
               </div>
             )}
@@ -154,23 +154,23 @@ export default function Dashboard() {
       </div>
 
       {/* Tabbed Content */}
-      <Tabs defaultValue="history" className="space-y-4">
-        <TabsList className="flex h-auto w-full items-center justify-start overflow-x-auto hide-scrollbar p-1 sm:grid sm:grid-cols-4">
-          <TabsTrigger value="history" className="flex-1 shrink-0 flex-col items-center gap-0.5 py-2 px-3 md:flex-row md:gap-2 md:py-2 md:px-4">
-            <History className="h-4 w-4" />
-            <span className="text-xs md:text-sm">History</span>
+      <Tabs defaultValue="history" className="space-y-4 px-2 md:px-0">
+        <TabsList className="grid grid-cols-4 h-auto w-full p-1 gap-1">
+          <TabsTrigger value="history" className="flex flex-col items-center justify-center gap-1 py-2 px-1 md:flex-row md:gap-2 md:px-4">
+            <History className="h-3 w-3 md:h-4 md:w-4 shrink-0" />
+            <span className="text-[9px] sm:text-xs md:text-sm truncate">History</span>
           </TabsTrigger>
-          <TabsTrigger value="assets" className="flex-1 shrink-0 flex-col items-center gap-0.5 py-2 px-3 md:flex-row md:gap-2 md:py-2 md:px-4">
-            <TrendingUp className="h-4 w-4" />
-            <span className="text-xs md:text-sm">Assets</span>
+          <TabsTrigger value="assets" className="flex flex-col items-center justify-center gap-1 py-2 px-1 md:flex-row md:gap-2 md:px-4">
+            <TrendingUp className="h-3 w-3 md:h-4 md:w-4 shrink-0" />
+            <span className="text-[9px] sm:text-xs md:text-sm truncate">Assets</span>
           </TabsTrigger>
-          <TabsTrigger value="liabilities" className="flex-1 shrink-0 flex-col items-center gap-0.5 py-2 px-3 md:flex-row md:gap-2 md:py-2 md:px-4">
-            <TrendingDown className="h-4 w-4" />
-            <span className="text-xs md:text-sm">Liabilities</span>
+          <TabsTrigger value="liabilities" className="flex flex-col items-center justify-center gap-1 py-2 px-1 md:flex-row md:gap-2 md:px-4">
+            <TrendingDown className="h-3 w-3 md:h-4 md:w-4 shrink-0" />
+            <span className="text-[9px] sm:text-xs md:text-sm truncate">Liab.</span>
           </TabsTrigger>
-          <TabsTrigger value="spending" className="flex-1 shrink-0 flex-col items-center gap-0.5 py-2 px-3 md:flex-row md:gap-2 md:py-2 md:px-4">
-            <Receipt className="h-4 w-4" />
-            <span className="text-xs md:text-sm">Spending</span>
+          <TabsTrigger value="spending" className="flex flex-col items-center justify-center gap-1 py-2 px-1 md:flex-row md:gap-2 md:px-4">
+            <Receipt className="h-3 w-3 md:h-4 md:w-4 shrink-0" />
+            <span className="text-[9px] sm:text-xs md:text-sm truncate">Spend</span>
           </TabsTrigger>
         </TabsList>
 
