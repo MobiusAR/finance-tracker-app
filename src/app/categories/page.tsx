@@ -138,16 +138,16 @@ export default function CategoriesPage() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-2 border-l-4 border-l-primary md:col-span-1 relative group">
+        <Card className="col-span-2 border-l-4 border-l-primary md:col-span-1 relative">
           <CardHeader className="p-3 pb-1 sm:p-6 sm:pb-2 flex flex-row items-center justify-between">
             <CardTitle className="text-xs font-medium sm:text-sm">Budget Surplus</CardTitle>
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2 sm:top-4 sm:right-4"
+              className="h-8 w-8 absolute top-1 right-1 sm:top-2 sm:right-2 text-muted-foreground hover:text-foreground transition-colors"
               onClick={() => setConfigOpen(true)}
             >
-              <Settings className="h-4 w-4" />
+              <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
           </CardHeader>
           <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
@@ -164,18 +164,18 @@ export default function CategoriesPage() {
             ) : (
               <div>
                 <div className="flex items-center gap-2">
-                  <PiggyBank className={`h-4 w-4 sm:h-5 sm:w-5 ${totalSurplus >= 0 ? 'text-sage' : 'text-destructive'}`} />
-                  <span className={`text-lg font-bold sm:text-2xl ${totalSurplus >= 0 ? 'text-sage' : 'text-destructive'}`}>
-                    {formatCurrency(Math.abs(totalSurplus))}
+                  <PiggyBank className={`h-4 w-4 sm:h-5 sm:w-5 ${totalSurplus + (config?.initial_balance || 0) >= 0 ? 'text-sage' : 'text-destructive'}`} />
+                  <span className={`text-lg font-bold sm:text-2xl ${totalSurplus + (config?.initial_balance || 0) >= 0 ? 'text-sage' : 'text-destructive'}`}>
+                    {formatCurrency(Math.abs(totalSurplus + (config?.initial_balance || 0)))}
                   </span>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-5 w-5 ml-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="h-6 w-6 ml-1 text-muted-foreground hover:text-foreground transition-colors"
                     onClick={() => setAdjustmentOpen(true)}
                     title="Manual Adjustment"
                   >
-                    <FileEdit className="h-3.5 w-3.5 text-muted-foreground" />
+                    <FileEdit className="h-4 w-4 sm:h-5 sm:w-5" />
                   </Button>
                 </div>
                 <p className="text-[10px] text-muted-foreground sm:text-xs">

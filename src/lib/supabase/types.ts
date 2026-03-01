@@ -80,6 +80,7 @@ export interface SurplusConfig {
   id: string;
   monthly_income: number;
   monthly_savings_target: number;
+  initial_balance: number;
   is_singleton: boolean;
   created_at: string;
   updated_at: string;

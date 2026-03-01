@@ -377,12 +377,12 @@ export function useSurplusConfig() {
     fetchConfig();
   }, [fetchConfig]);
 
-  const updateConfig = async (monthly_income: number, monthly_savings_target: number) => {
+  const updateConfig = async (monthly_income: number, monthly_savings_target: number, initial_balance: number) => {
     const supabase = createClient();
     const { data, error } = await supabase
       .from('surplus_config')
       .upsert(
-        { is_singleton: true, monthly_income, monthly_savings_target },
+        { is_singleton: true, monthly_income, monthly_savings_target, initial_balance },
         { onConflict: 'is_singleton' }
       )
       .select()

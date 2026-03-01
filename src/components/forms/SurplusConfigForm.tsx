@@ -18,7 +18,7 @@ import { toast } from 'sonner';
 interface SurplusConfigFormProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onSubmit: (monthly_income: number, monthly_savings_target: number) => Promise<void>;
+    onSubmit: (monthly_income: number, monthly_savings_target: number, initial_balance: number) => Promise<void>;
     config?: SurplusConfig | null;
 }
 
@@ -30,12 +30,14 @@ export function SurplusConfigForm({
 }: SurplusConfigFormProps) {
     const [income, setIncome] = useState('');
     const [savingsTarget, setSavingsTarget] = useState('');
+    const [initialBalance, setInitialBalance] = useState('');
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if (config) {
             setIncome(config.monthly_income?.toString() || '');
             setSavingsTarget(config.monthly_savings_target?.toString() || '');
+            setInitialBalance(config.initial_balance?.toString() || '0');
         } else {
             resetForm();
         }
@@ -44,6 +46,7 @@ export function SurplusConfigForm({
     const resetForm = () => {
         setIncome('');
         setSavingsTarget('');
+        setInitialBalance('0');
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -56,7 +59,7 @@ export function SurplusConfigForm({
 
         try {
             setLoading(true);
-            await onSubmit(parseFloat(income), parseFloat(savingsTarget));
+            await onSubmit(parseFloat(income), parseFloat(savingsTarget), parseFloat(initialBalance) || 0);
             toast.success('Surplus global settings updated!');
             onOpenChange(false);
         } catch (error) {
@@ -101,6 +104,19 @@ export function SurplusConfigForm({
                                 onChange={(e) => setSavingsTarget(e.target.value)}
                                 placeholder="e.g. 3000"
                             />
+                        </div>
+
+                        <div className="grid gap-2 pt-2 border-t">
+                            <Label htmlFor="initialBalance">Adjust Current Surplus Value ($)</Label>
+                            <Input
+                                id="initialBalance"
+                                type="number"
+                                step="0.01"
+                                value={initialBalance}
+                                onChange={(e) => setInitialBalance(e.target.value)}
+                                placeholder="e.g. 10000 or -2000"
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">This sets a master balance that your monthly surpluses configure against. You can use this to sync historic savings or deduct one-off amounts like taxes.</p>
                         </div>
 
                         <div className="bg-muted p-3 rounded-md mt-2">
