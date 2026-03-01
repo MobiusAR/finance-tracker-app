@@ -17,6 +17,34 @@ interface NetWorthTrendChartProps {
   data: NetWorthHistoryEntry[];
 }
 
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('en-SG', {
+    style: 'currency',
+    currency: 'SGD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+};
+
+const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; dataKey: string; color: string }>; label?: string }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="rounded-lg border bg-background p-3 shadow-md">
+        <p className="font-medium mb-2">{label}</p>
+        {payload.map((entry, index) => (
+          <p key={index} className="text-sm" style={{ color: entry.color }}>
+            {entry.dataKey === 'netWorth' && 'Net Worth: '}
+            {entry.dataKey === 'assets' && 'Assets: '}
+            {entry.dataKey === 'liabilities' && 'Liabilities: '}
+            {formatCurrency(entry.value)}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
 export function NetWorthTrendChart({ data }: NetWorthTrendChartProps) {
   if (data.length === 0) {
     return (
@@ -25,15 +53,6 @@ export function NetWorthTrendChart({ data }: NetWorthTrendChartProps) {
       </div>
     );
   }
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-SG', {
-      style: 'currency',
-      currency: 'SGD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
 
   const formatYAxis = (value: number) => {
     if (value >= 1000000) {
@@ -53,35 +72,16 @@ export function NetWorthTrendChart({ data }: NetWorthTrendChartProps) {
     liabilities: entry.total_liabilities,
   }));
 
-  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; dataKey: string; color: string }>; label?: string }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="rounded-lg border bg-background p-3 shadow-md">
-          <p className="font-medium mb-2">{label}</p>
-          {payload.map((entry, index) => (
-            <p key={index} className="text-sm" style={{ color: entry.color }}>
-              {entry.dataKey === 'netWorth' && 'Net Worth: '}
-              {entry.dataKey === 'assets' && 'Assets: '}
-              {entry.dataKey === 'liabilities' && 'Liabilities: '}
-              {formatCurrency(entry.value)}
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
-
   return (
     <ResponsiveContainer width="100%" height="100%">
       <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-        <XAxis 
-          dataKey="date" 
+        <XAxis
+          dataKey="date"
           tick={{ fontSize: 12 }}
           className="text-muted-foreground"
         />
-        <YAxis 
+        <YAxis
           tickFormatter={formatYAxis}
           tick={{ fontSize: 12 }}
           className="text-muted-foreground"

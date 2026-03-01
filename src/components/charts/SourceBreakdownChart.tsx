@@ -10,6 +10,29 @@ interface SourceBreakdownChartProps {
 
 const COLORS = ['#22c55e', '#3b82f6', '#f97316', '#ec4899', '#8b5cf6', '#06b6d4', '#eab308'];
 
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('en-SG', {
+    style: 'currency',
+    currency: 'SGD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+};
+
+const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: SourceBreakdown }> }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="rounded-lg border bg-background p-3 shadow-md">
+        <p className="font-medium">{data.source}</p>
+        <p className="text-sm text-muted-foreground">{formatCurrency(data.value)}</p>
+        <p className="text-xs text-muted-foreground">{data.assets.length} asset(s)</p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export function SourceBreakdownChart({ data, category }: SourceBreakdownChartProps) {
   if (data.length === 0) {
     return (
@@ -18,29 +41,6 @@ export function SourceBreakdownChart({ data, category }: SourceBreakdownChartPro
       </div>
     );
   }
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-SG', {
-      style: 'currency',
-      currency: 'SGD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: SourceBreakdown }> }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="rounded-lg border bg-background p-3 shadow-md">
-          <p className="font-medium">{data.source}</p>
-          <p className="text-sm text-muted-foreground">{formatCurrency(data.value)}</p>
-          <p className="text-xs text-muted-foreground">{data.assets.length} asset(s)</p>
-        </div>
-      );
-    }
-    return null;
-  };
 
   return (
     <div className="flex h-full flex-col">

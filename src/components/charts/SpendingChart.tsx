@@ -7,6 +7,29 @@ interface SpendingChartProps {
   data: SpendingSummary[];
 }
 
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('en-SG', {
+    style: 'currency',
+    currency: 'SGD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+};
+
+const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: SpendingSummary }> }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="rounded-lg border bg-background p-3 shadow-md">
+        <p className="font-medium">{data.category}</p>
+        <p className="text-sm text-muted-foreground">{formatCurrency(data.total)}</p>
+        <p className="text-xs text-muted-foreground">{data.count} transactions</p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export function SpendingChart({ data }: SpendingChartProps) {
   if (data.length === 0) {
     return (
@@ -15,29 +38,6 @@ export function SpendingChart({ data }: SpendingChartProps) {
       </div>
     );
   }
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-SG', {
-      style: 'currency',
-      currency: 'SGD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: SpendingSummary }> }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="rounded-lg border bg-background p-3 shadow-md">
-          <p className="font-medium">{data.category}</p>
-          <p className="text-sm text-muted-foreground">{formatCurrency(data.total)}</p>
-          <p className="text-xs text-muted-foreground">{data.count} transactions</p>
-        </div>
-      );
-    }
-    return null;
-  };
 
   const chartHeight = Math.max(120, data.length * 55 + 20);
 

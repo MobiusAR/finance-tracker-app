@@ -125,7 +125,7 @@ export default function LoansPage() {
                         <HandCoins className="mx-auto h-8 w-8 text-muted-foreground/50" />
                         <h3 className="mt-4 text-sm font-semibold">No loans recorded</h3>
                         <p className="mt-1 text-sm text-muted-foreground max-w-sm">
-                            Keep track of money you've lent to friends and family without messing up your main net worth calculations.
+                            Keep track of money you&apos;ve lent to friends and family without messing up your main net worth calculations.
                         </p>
                         <Button onClick={handleOpenNew} variant="outline" className="mt-4 bg-background">
                             <Plus className="mr-2 h-4 w-4" />

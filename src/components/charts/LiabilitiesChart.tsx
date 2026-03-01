@@ -8,6 +8,28 @@ interface LiabilitiesChartProps {
   onCategoryClick?: (category: string) => void;
 }
 
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('en-SG', {
+    style: 'currency',
+    currency: 'SGD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+};
+
+const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: NetWorthBreakdown }> }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="rounded-lg border bg-background p-3 shadow-md">
+        <p className="font-medium">{data.category}</p>
+        <p className="text-sm text-muted-foreground">{formatCurrency(data.value)}</p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export function LiabilitiesChart({ data, onCategoryClick }: LiabilitiesChartProps) {
   // Filter for liabilities only
   const chartData = data.filter((item) => item.value > 0 && item.type === 'liability');
@@ -19,28 +41,6 @@ export function LiabilitiesChart({ data, onCategoryClick }: LiabilitiesChartProp
       </div>
     );
   }
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-SG', {
-      style: 'currency',
-      currency: 'SGD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: NetWorthBreakdown }> }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="rounded-lg border bg-background p-3 shadow-md">
-          <p className="font-medium">{data.category}</p>
-          <p className="text-sm text-muted-foreground">{formatCurrency(data.value)}</p>
-        </div>
-      );
-    }
-    return null;
-  };
 
   // Use different shades of red for liabilities
   const COLORS = ['#ef4444', '#dc2626', '#b91c1c', '#991b1b', '#7f1d1d'];

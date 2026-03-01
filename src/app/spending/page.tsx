@@ -32,7 +32,7 @@ export default function SpendingPage() {
   const { transactions, loading, createTransaction, updateTransaction, deleteTransaction } =
     useTransactions(currentMonth);
   const { categories } = useSpendingCategories();
-  const { summary, totalSpending } = useSpendingSummary(1, currentMonth);
+  const { summary } = useSpendingSummary(1, currentMonth);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -55,27 +55,25 @@ export default function SpendingPage() {
     setAmountMax('');
   };
 
-  const filteredTransactions = useMemo(() => {
-    return transactions.filter((t) => {
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        const matchDesc = t.description ? t.description.toLowerCase().includes(q) : false;
-        const matchCategory = t.category?.name ? t.category.name.toLowerCase().includes(q) : false;
-        const matchAmount = t.amount ? formatCurrency(t.amount).includes(q) : false;
-        if (!matchDesc && !matchCategory && !matchAmount) return false;
+  const filteredTransactions = transactions.filter((t) => {
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const matchDesc = t.description ? t.description.toLowerCase().includes(q) : false;
+      const matchCategory = t.category?.name ? t.category.name.toLowerCase().includes(q) : false;
+      const matchAmount = t.amount ? formatCurrency(t.amount).includes(q) : false;
+      if (!matchDesc && !matchCategory && !matchAmount) return false;
+    }
+    if (categoryFilter !== 'all') {
+      if (categoryFilter === 'uncategorized') {
+        if (t.category_id) return false;
+      } else {
+        if (t.category_id !== categoryFilter) return false;
       }
-      if (categoryFilter !== 'all') {
-        if (categoryFilter === 'uncategorized') {
-          if (t.category_id) return false;
-        } else {
-          if (t.category_id !== categoryFilter) return false;
-        }
-      }
-      if (amountMin && Number(t.amount) < Number(amountMin)) return false;
-      if (amountMax && Number(t.amount) > Number(amountMax)) return false;
-      return true;
-    });
-  }, [transactions, searchQuery, categoryFilter, amountMin, amountMax]);
+    }
+    if (amountMin && Number(t.amount) < Number(amountMin)) return false;
+    if (amountMax && Number(t.amount) > Number(amountMax)) return false;
+    return true;
+  });
 
   // Auto-expand the most recent date when month changes
   useEffect(() => {
@@ -86,7 +84,10 @@ export default function SpendingPage() {
       const sortedDates = [...new Set(transactions.map(t => t.transaction_date))]
         .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
       if (sortedDates.length > 0) {
-        setOpenDates(new Set([sortedDates[0]]));
+        // Use functional state update to avoid stale closures, though we are setting a new set
+        setTimeout(() => {
+          setOpenDates(new Set([sortedDates[0]]));
+        }, 0);
       }
     }
   }, [transactions, currentMonth]);

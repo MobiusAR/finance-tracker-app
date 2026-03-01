@@ -8,6 +8,28 @@ interface NetWorthChartProps {
   onCategoryClick?: (category: string) => void;
 }
 
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('en-SG', {
+    style: 'currency',
+    currency: 'SGD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+};
+
+const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: NetWorthBreakdown }> }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="rounded-lg border bg-background p-3 shadow-md">
+        <p className="font-medium">{data.category}</p>
+        <p className="text-sm text-muted-foreground">{formatCurrency(data.value)}</p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export function NetWorthChart({ data, onCategoryClick }: NetWorthChartProps) {
   // Filter out zero values and liabilities - assets only
   const chartData = data.filter((item) => item.value > 0 && item.type !== 'liability');
@@ -19,28 +41,6 @@ export function NetWorthChart({ data, onCategoryClick }: NetWorthChartProps) {
       </div>
     );
   }
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-SG', {
-      style: 'currency',
-      currency: 'SGD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: NetWorthBreakdown }> }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="rounded-lg border bg-background p-3 shadow-md">
-          <p className="font-medium">{data.category}</p>
-          <p className="text-sm text-muted-foreground">{formatCurrency(data.value)}</p>
-        </div>
-      );
-    }
-    return null;
-  };
 
   return (
     <ResponsiveContainer width="100%" height="100%">

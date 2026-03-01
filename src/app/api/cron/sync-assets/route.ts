@@ -43,17 +43,17 @@ export async function GET(request: Request) {
         }
 
         // 3. Extract unique ticker symbols
-        const tickers = new Set(assets.map((a: any) => a.ticker_symbol).filter(Boolean));
-        const allSymbols = Array.from(tickers).map((t: any) => t.toUpperCase());
+        const tickers = new Set(assets.map((a) => a.ticker_symbol).filter(Boolean));
+        const allSymbols = Array.from(tickers).map((t: unknown) => String(t).toUpperCase());
 
         // 4. Fetch asset quotes from Yahoo Finance
-        const quotes = await yahooFinance.quote(allSymbols) as any[];
+        const quotes = await yahooFinance.quote(allSymbols);
 
         // Create a map for quick lookup and identify which currencies we need to fetch against SGD
-        const quoteMap: Record<string, any> = {};
+        const quoteMap: Record<string, typeof quotes[0]> = {};
         const requiredCurrencies = new Set<string>();
 
-        quotes.forEach((q: any) => {
+        quotes.forEach((q) => {
             quoteMap[q.symbol] = q;
             if (q.currency && q.currency !== 'SGD') {
                 requiredCurrencies.add(`${q.currency}SGD=X`.toUpperCase());
@@ -62,17 +62,17 @@ export async function GET(request: Request) {
 
         // 5. Fetch required FX rates
         const fxRates = Array.from(requiredCurrencies) as string[];
-        const fxQuotes = fxRates.length > 0 ? await yahooFinance.quote(fxRates) as any[] : [];
+        const fxQuotes = fxRates.length > 0 ? await yahooFinance.quote(fxRates) : [];
 
         const fxMap: Record<string, number> = {};
-        fxQuotes.forEach((q: any) => {
+        fxQuotes.forEach((q) => {
             fxMap[q.symbol] = q.regularMarketPrice || 1;
         });
 
         // 6. Calculate lived updated values
-        const updatePromises: any[] = [];
+        const updatePromises: Promise<unknown>[] = [];
 
-        assets.forEach((asset: any) => {
+        assets.forEach((asset) => {
             if (!asset.ticker_symbol || !asset.shares) return;
 
             const normalizedTicker = asset.ticker_symbol.toUpperCase();
@@ -109,7 +109,7 @@ export async function GET(request: Request) {
                     .then(({ data, error }) => {
                         if (error) throw error;
                         return data;
-                    })
+                    }) as unknown as Promise<unknown>
             );
         });
 
@@ -119,7 +119,7 @@ export async function GET(request: Request) {
         return NextResponse.json({
             success: true,
             message: `Successfully synchronized ${updatePromises.length} assets`,
-            debug_asset_calculations: assets.map((asset: any) => {
+            debug_asset_calculations: assets.map((asset) => {
                 const quote = quoteMap[asset.ticker_symbol];
                 const latestPrice = quote?.regularMarketPrice || 0;
                 const assetCurrency = quote?.currency || 'USD';

@@ -1,4 +1,4 @@
-const YahooFinance = require('yahoo-finance2').default;
+import YahooFinance from 'yahoo-finance2';
 const yahooFinance = new YahooFinance();
 
 async function test() {
