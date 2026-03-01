@@ -26,6 +26,7 @@ import { AssetCategoryForm } from '@/components/forms/AssetCategoryForm';
 import { useAssets, useAssetCategories, useAssetSources } from '@/hooks/useAssets';
 import { Asset, AssetCategory, AssetSource, CreateAsset, CreateAssetCategory, CreateAssetSource, UpdateAsset } from '@/lib/supabase/types';
 import { Plus, MoreHorizontal, Pencil, Trash2, Building, FolderTree, Settings, ChevronDown } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -217,7 +218,12 @@ export default function AssetsPage() {
 
           {/* Assets List */}
           {loading ? (
-            <Card><CardContent className="flex h-40 items-center justify-center">Loading...</CardContent></Card>
+            <div className="space-y-3">
+              <Skeleton className="h-[72px] w-full rounded-xl" />
+              <Skeleton className="h-[72px] w-full rounded-xl" />
+              <Skeleton className="h-[72px] w-full rounded-xl" />
+              <Skeleton className="h-[72px] w-full rounded-xl" />
+            </div>
           ) : Object.keys(groupedAssets).length === 0 ? (
             <Card>
               <CardContent className="flex h-40 flex-col items-center justify-center gap-3">

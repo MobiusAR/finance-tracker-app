@@ -5,6 +5,7 @@ import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
 import { NetWorthChart } from '@/components/charts/NetWorthChart';
 import { LiabilitiesChart } from '@/components/charts/LiabilitiesChart';
 import { SpendingChart } from '@/components/charts/SpendingChart';
@@ -72,16 +73,20 @@ export default function Dashboard() {
       />
 
       {/* Summary Cards - 2x2 grid on mobile, 4 cols on desktop */}
-      <div className="mb-4 grid grid-cols-2 gap-3 md:mb-6 md:gap-4 lg:grid-cols-4">
+      <div className="mb-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 px-4 md:px-0 md:mb-6">
         <Card className="border-l-4 border-l-primary">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
             <CardTitle className="text-xs font-medium md:text-sm">Net Worth</CardTitle>
             <Wallet className="h-3 w-3 text-muted-foreground md:h-4 md:w-4" />
           </CardHeader>
           <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
-            <div className="text-lg font-bold md:text-2xl">
-              {assetsLoading ? '...' : formatCurrency(totalNetWorth)}
-            </div>
+            {assetsLoading ? (
+              <Skeleton className="h-7 w-24 md:h-8 md:w-32" />
+            ) : (
+              <div className="text-lg font-bold md:text-2xl">
+                {formatCurrency(totalNetWorth)}
+              </div>
+            )}
             {netWorthChange !== null && (
               <p className={`text-[10px] md:text-xs ${netWorthChange >= 0 ? 'text-sage' : 'text-destructive'}`}>
                 {netWorthChange >= 0 ? '+' : ''}{formatCurrency(netWorthChange)}
@@ -96,9 +101,13 @@ export default function Dashboard() {
             <TrendingUp className="h-3 w-3 text-sage md:h-4 md:w-4" />
           </CardHeader>
           <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
-            <div className="text-lg font-bold text-sage md:text-2xl">
-              {assetsLoading ? '...' : formatCurrency(totalAssets)}
-            </div>
+            {assetsLoading ? (
+              <Skeleton className="h-7 w-24 md:h-8 md:w-32" />
+            ) : (
+              <div className="text-lg font-bold text-sage md:text-2xl">
+                {formatCurrency(totalAssets)}
+              </div>
+            )}
             <p className="hidden text-xs text-muted-foreground md:block">
               Investments + Cash
             </p>
@@ -111,9 +120,13 @@ export default function Dashboard() {
             <TrendingDown className="h-3 w-3 text-destructive md:h-4 md:w-4" />
           </CardHeader>
           <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
-            <div className="text-lg font-bold text-destructive md:text-2xl">
-              {assetsLoading ? '...' : formatCurrency(totalLiabilities)}
-            </div>
+            {assetsLoading ? (
+              <Skeleton className="h-7 w-24 md:h-8 md:w-32" />
+            ) : (
+              <div className="text-lg font-bold text-destructive md:text-2xl">
+                {formatCurrency(totalLiabilities)}
+              </div>
+            )}
             <p className="hidden text-xs text-muted-foreground md:block">
               Loans & debts
             </p>
@@ -126,9 +139,13 @@ export default function Dashboard() {
             <CreditCard className="h-3 w-3 text-terracotta md:h-4 md:w-4" />
           </CardHeader>
           <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
-            <div className="text-lg font-bold md:text-2xl">
-              {spendingLoading ? '...' : formatCurrency(totalSpending)}
-            </div>
+            {spendingLoading ? (
+              <Skeleton className="h-7 w-24 md:h-8 md:w-32" />
+            ) : (
+              <div className="text-lg font-bold md:text-2xl">
+                {formatCurrency(totalSpending)}
+              </div>
+            )}
             <p className="hidden text-xs text-muted-foreground md:block">
               This month
             </p>
@@ -186,9 +203,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
               {historyLoading ? (
-                <div className="flex h-[300px] items-center justify-center md:h-[400px]">
-                  Loading history...
-                </div>
+                <Skeleton className="h-[300px] w-full rounded-xl md:h-[400px]" />
               ) : (
                 <div className="h-[300px] md:h-[400px]">
                   <NetWorthTrendChart data={history} />
@@ -213,9 +228,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
                 {assetsLoading ? (
-                  <div className="flex h-[300px] items-center justify-center md:h-[350px]">
-                    Loading...
-                  </div>
+                  <Skeleton className="h-[300px] w-full rounded-full md:h-[350px]" />
                 ) : (
                   <div className="h-[300px] md:h-[350px]">
                     <NetWorthChart
@@ -273,9 +286,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
                 {assetsLoading ? (
-                  <div className="flex h-[300px] items-center justify-center md:h-[350px]">
-                    Loading...
-                  </div>
+                  <Skeleton className="h-[300px] w-full rounded-full md:h-[350px]" />
                 ) : (
                   <div className="h-[300px] md:h-[350px]">
                     <LiabilitiesChart
@@ -332,9 +343,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="p-4 pt-0 md:p-6 md:pt-0 overflow-hidden">
               {spendingLoading ? (
-                <div className="flex h-[200px] items-center justify-center md:h-[300px]">
-                  Loading...
-                </div>
+                <Skeleton className="h-[200px] w-full rounded-xl md:h-[300px]" />
               ) : (
                 <SpendingChart data={summary} />
               )}

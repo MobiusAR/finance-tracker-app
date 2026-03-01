@@ -171,7 +171,7 @@ export default function CategoriesPage() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 ml-1 text-muted-foreground hover:text-foreground transition-colors"
+                    className="h-10 w-10 ml-1 text-muted-foreground hover:text-foreground transition-colors"
                     onClick={() => setAdjustmentOpen(true)}
                     title="Manual Adjustment"
                   >
@@ -248,8 +248,8 @@ export default function CategoriesPage() {
                     )}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" className="h-[44px] w-[44px]">
+                          <MoreHorizontal className="h-5 w-5" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
