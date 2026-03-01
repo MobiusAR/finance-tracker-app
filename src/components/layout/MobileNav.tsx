@@ -39,7 +39,7 @@ export function MobileNav() {
               )}
             >
               <div className={cn(
-                'flex h-7 w-12 items-center justify-center rounded-full transition-colors',
+                'flex h-7 w-12 items-center justify-center rounded-xl transition-colors',
                 isActive && 'bg-terracotta/10'
               )}>
                 <item.icon className="h-[18px] w-[18px]" />
