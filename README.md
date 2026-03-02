@@ -80,6 +80,17 @@ Open [http://localhost:3000](http://localhost:3000) to view the app.
 
 6. Your app will be live at `https://your-project.vercel.app`
 
+### Step 6: Generate Android App (APK)
+
+This project is configured as a Progressive Web App (PWA). You can easily package it into a native-feeling Android app.
+
+1. Deploy your app to Vercel (or any HTTPS public host)
+2. Go to [PWABuilder](https://www.pwabuilder.com/)
+3. Enter your live URL (e.g., `https://finance-tracker-app.vercel.app`)
+4. Confirm your Manifest and Service Worker are detected (they should be green)
+5. Click **Package For Android**
+6. Download the generated APK and install it on your Android device!
+
 ## Usage Guide
 
 ### Managing Assets

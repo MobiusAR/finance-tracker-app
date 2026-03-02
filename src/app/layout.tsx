@@ -3,6 +3,8 @@ import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/layout/AppShell";
 import { Toaster } from "@/components/ui/sonner";
+import { PwaRegistry } from "@/components/layout/PwaRegistry";
+import type { Viewport } from "next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,6 +25,16 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: "Finance Tracker",
   description: "Personal finance tracker for net worth and spending",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Finance Tracker",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#000000",
 };
 
 export default function RootLayout({
@@ -37,6 +49,7 @@ export default function RootLayout({
       >
         <AppShell>{children}</AppShell>
         <Toaster />
+        <PwaRegistry />
       </body>
     </html>
   );
