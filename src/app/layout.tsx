@@ -4,6 +4,7 @@ import "./globals.css";
 import { AppShell } from "@/components/layout/AppShell";
 import { Toaster } from "@/components/ui/sonner";
 import { PwaRegistry } from "@/components/layout/PwaRegistry";
+import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import type { Viewport } from "next";
 
 const geistSans = Geist({
@@ -31,18 +32,14 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "Finance Tracker",
   },
-  other: {
-    "color-scheme": "only light",
-    "night-mode": "disable",
-    "layoutmode": "standard",
-    "imagemode": "force",
-    "screen-orientation": "portrait",
-  }
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1B263B",
-  colorScheme: "only light",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#1B263B" },
+    { media: "(prefers-color-scheme: dark)", color: "#0D131F" },
+  ],
+  colorScheme: "light dark",
 };
 
 export default function RootLayout({
@@ -51,14 +48,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="light" style={{ colorScheme: "only light", backgroundColor: "#F5EBE0" }}>
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} antialiased`}
-        style={{ colorScheme: "only light", backgroundColor: "#F5EBE0" }}
       >
-        <AppShell>{children}</AppShell>
-        <Toaster />
-        <PwaRegistry />
+        <ThemeProvider>
+          <AppShell>{children}</AppShell>
+          <Toaster />
+          <PwaRegistry />
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Wallet, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
+import { ThemeToggle } from './ThemeToggle';
 
 export function MobileHeader() {
   const router = useRouter();
@@ -27,9 +28,12 @@ export function MobileHeader() {
         <span className="font-serif font-semibold tracking-wide">Finance Tracker</span>
       </div>
 
-      <Button variant="ghost" size="icon" onClick={handleSignOut} className="text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground">
-        <LogOut className="h-5 w-5" />
-      </Button>
+      <div className="flex items-center gap-1">
+        <ThemeToggle className="text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground" />
+        <Button variant="ghost" size="icon" onClick={handleSignOut} className="text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground">
+          <LogOut className="h-5 w-5" />
+        </Button>
+      </div>
     </header>
   );
 }

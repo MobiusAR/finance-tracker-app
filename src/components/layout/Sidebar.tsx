@@ -15,6 +15,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ThemeToggle } from './ThemeToggle';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -70,8 +71,12 @@ export function Sidebar() {
           })}
         </nav>
 
-        {/* Footer with Sign Out */}
-        <div className="border-t border-sidebar-border p-4">
+        {/* Footer with Theme Toggle and Sign Out */}
+        <div className="border-t border-sidebar-border p-4 space-y-1">
+          <div className="flex items-center gap-2">
+            <ThemeToggle className="text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground" />
+            <span className="text-sm text-sidebar-foreground/60">Theme</span>
+          </div>
           <Button
             variant="ghost"
             className="w-full justify-start text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
