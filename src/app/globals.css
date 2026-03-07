@@ -53,6 +53,7 @@
    "Sophisticated Hearth" Palette — Light Theme
    ═══════════════════════════════════════════════════ */
 :root {
+  color-scheme: light;
   --radius: 0.75rem;
 
   /* Core palette */
@@ -60,9 +61,12 @@
   --sage: #84A98C;
 
   /* Surfaces */
-  --background: #F5EBE0;            /* Champagne Silk */
-  --foreground: #1B263B;             /* Midnight Indigo */
-  --card: #FFFCF9;                   /* Warm white */
+  --background: #F5EBE0;
+  /* Champagne Silk */
+  --foreground: #1B263B;
+  /* Midnight Indigo */
+  --card: #FFFCF9;
+  /* Warm white */
   --card-foreground: #1B263B;
   --popover: #FFFCF9;
   --popover-foreground: #1B263B;
@@ -77,7 +81,8 @@
 
   /* Muted: Warm neutral */
   --muted: #EDE4D9;
-  --muted-foreground: #778DA9;       /* Slate Grey */
+  --muted-foreground: #778DA9;
+  /* Slate Grey */
 
   /* Accent: Terracotta tint */
   --accent: #E8DDD1;
@@ -92,16 +97,22 @@
   --ring: #778DA9;
 
   /* Charts — palette harmonics */
-  --chart-1: #D98364;                /* Terracotta */
-  --chart-2: #84A98C;                /* Sage */
-  --chart-3: #778DA9;                /* Slate */
-  --chart-4: #1B263B;                /* Indigo */
-  --chart-5: #C1666B;                /* Warm red */
+  --chart-1: #D98364;
+  /* Terracotta */
+  --chart-2: #84A98C;
+  /* Sage */
+  --chart-3: #778DA9;
+  /* Slate */
+  --chart-4: #1B263B;
+  /* Indigo */
+  --chart-5: #C1666B;
+  /* Warm red */
 
   /* Sidebar: Dark Midnight Indigo */
   --sidebar: #1B263B;
   --sidebar-foreground: #F5EBE0;
-  --sidebar-primary: #D98364;        /* Terracotta accent */
+  --sidebar-primary: #D98364;
+  /* Terracotta accent */
   --sidebar-primary-foreground: #FFFCF9;
   --sidebar-accent: #273350;
   --sidebar-accent-foreground: #F5EBE0;
@@ -114,11 +125,16 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+
   /* Serif font for headings — "Boutique Bank" vibe */
-  h1, h2, h3, [data-slot="card-title"] {
+  h1,
+  h2,
+  h3,
+  [data-slot="card-title"] {
     font-family: var(--font-playfair), Georgia, serif;
   }
 }
@@ -128,6 +144,7 @@
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom);
   }
+
   .safe-area-top {
     padding-top: env(safe-area-inset-top);
   }
@@ -135,10 +152,14 @@
 
 @layer utilities {
   .hide-scrollbar {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
   }
+
   .hide-scrollbar::-webkit-scrollbar {
-    display: none; /* Chrome, Safari and Opera */
+    display: none;
+    /* Chrome, Safari and Opera */
   }
 }
