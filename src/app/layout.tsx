@@ -31,6 +31,13 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "Finance Tracker",
   },
+  other: {
+    "color-scheme": "only light",
+    "night-mode": "disable",
+    "layoutmode": "standard",
+    "imagemode": "force",
+    "screen-orientation": "portrait",
+  }
 };
 
 export const viewport: Viewport = {
@@ -44,9 +51,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="light" style={{ colorScheme: "only light", backgroundColor: "#F5EBE0" }}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} antialiased`}
+        style={{ colorScheme: "only light", backgroundColor: "#F5EBE0" }}
       >
         <AppShell>{children}</AppShell>
         <Toaster />
