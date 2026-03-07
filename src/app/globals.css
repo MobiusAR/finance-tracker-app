@@ -120,7 +120,57 @@
   --sidebar-ring: #778DA9;
 }
 
-/* Dark Theme (Removed to force Light Theme) */
+/* Trick Android WebView auto-darkening algorithm by defining a dark mode that uses light theme colors */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: light;
+    --radius: 0.75rem;
+
+    --terracotta: #D98364;
+    --sage: #84A98C;
+
+    --background: #F5EBE0;
+    --foreground: #1B263B;
+    --card: #FFFCF9;
+    --card-foreground: #1B263B;
+    --popover: #FFFCF9;
+    --popover-foreground: #1B263B;
+
+    --primary: #1B263B;
+    --primary-foreground: #F5EBE0;
+
+    --secondary: #F0E6DA;
+    --secondary-foreground: #1B263B;
+
+    --muted: #EDE4D9;
+    --muted-foreground: #778DA9;
+
+    --accent: #E8DDD1;
+    --accent-foreground: #1B263B;
+
+    --destructive: #C1666B;
+
+    --border: #D9CFC3;
+    --input: #D9CFC3;
+    --ring: #778DA9;
+
+    --chart-1: #D98364;
+    --chart-2: #84A98C;
+    --chart-3: #778DA9;
+    --chart-4: #1B263B;
+    --chart-5: #C1666B;
+
+    --sidebar: #1B263B;
+    --sidebar-foreground: #F5EBE0;
+    --sidebar-primary: #D98364;
+    --sidebar-primary-foreground: #FFFCF9;
+    --sidebar-accent: #273350;
+    --sidebar-accent-foreground: #F5EBE0;
+    --sidebar-border: #273350;
+    --sidebar-ring: #778DA9;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
