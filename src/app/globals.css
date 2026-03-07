@@ -53,7 +53,7 @@
    "Sophisticated Hearth" Palette — Light Theme
    ═══════════════════════════════════════════════════ */
 :root {
-  color-scheme: light;
+  color-scheme: only light;
   --radius: 0.75rem;
 
   /* Core palette */
@@ -123,7 +123,7 @@
 /* Trick Android WebView auto-darkening algorithm by defining a dark mode that uses light theme colors */
 @media (prefers-color-scheme: dark) {
   :root {
-    color-scheme: light;
+    color-scheme: only light;
     --radius: 0.75rem;
 
     --terracotta: #D98364;
