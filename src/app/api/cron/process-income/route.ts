@@ -150,12 +150,10 @@ export async function GET(request: Request) {
                                     
                              if (!oaUpdateError) {
                                 const newHomeLoanTotal = Math.max(0, Number(settings.home_loan_total || 0) - settings.monthly_mortgage);
-                                const newMonthsRemaining = Math.max(0, Number(settings.home_loan_months_remaining || 0) - 1);
 
                                 await supabase.from('user_settings').update({ 
                                     last_mortgage_processed_date: today.toISOString().split('T')[0],
-                                    home_loan_total: newHomeLoanTotal,
-                                    home_loan_months_remaining: newMonthsRemaining
+                                    home_loan_total: newHomeLoanTotal
                                 }).eq('id', settings.id);
                                 
                                 mortgageProcessed = true;

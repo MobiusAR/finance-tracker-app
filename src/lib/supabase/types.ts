@@ -238,7 +238,6 @@ export interface UserSettings {
   cpf_pay_day: number;
   mortgage_pay_day: number;
   home_loan_total: number;
-  home_loan_months_remaining: number;
   last_salary_processed_date: string | null;
   last_cpf_processed_date: string | null;
   last_mortgage_processed_date: string | null;

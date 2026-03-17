@@ -29,7 +29,6 @@ export default function IncomeAutomationPage() {
   const [mortgage, setMortgage] = useState<string>('0');
   const [mortgagePayDay, setMortgagePayDay] = useState<string>('15');
   const [homeLoanTotal, setHomeLoanTotal] = useState<string>('0');
-  const [homeLoanMonths, setHomeLoanMonths] = useState<string>('0');
 
   const [savingSettings, setSavingSettings] = useState(false);
 
@@ -47,9 +46,13 @@ export default function IncomeAutomationPage() {
       if (settings.monthly_mortgage) setMortgage(settings.monthly_mortgage.toString());
       if (settings.mortgage_pay_day) setMortgagePayDay(settings.mortgage_pay_day.toString());
       if (settings.home_loan_total) setHomeLoanTotal(settings.home_loan_total.toString());
-      if (settings.home_loan_months_remaining) setHomeLoanMonths(settings.home_loan_months_remaining.toString());
     }
   }, [settings, settingsLoading]);
+
+  // Derived Values
+  const calculatedMonthsLeft = parseFloat(mortgage) > 0 
+    ? Math.ceil(parseFloat(homeLoanTotal) / parseFloat(mortgage)) 
+    : 0;
 
   const handleSaveSettings = async () => {
     try {
@@ -63,8 +66,7 @@ export default function IncomeAutomationPage() {
         cpf_pay_day: parseInt(cpfPayDay) || 14,
         monthly_mortgage: parseFloat(mortgage) || 0,
         mortgage_pay_day: parseInt(mortgagePayDay) || 15,
-        home_loan_total: parseFloat(homeLoanTotal) || 0,
-        home_loan_months_remaining: parseInt(homeLoanMonths) || 0
+        home_loan_total: parseFloat(homeLoanTotal) || 0
       });
       toast.success('Automation settings saved successfully');
     } catch {
@@ -205,8 +207,8 @@ export default function IncomeAutomationPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="homeLoanMonths">Months Left</Label>
-                  <Input id="homeLoanMonths" type="number" value={homeLoanMonths} onChange={(e) => setHomeLoanMonths(e.target.value)} />
+                  <Label htmlFor="calculatedMonths">Months Left (Est.)</Label>
+                  <Input id="calculatedMonths" type="text" value={calculatedMonthsLeft} disabled className="bg-muted/50 text-muted-foreground" />
                 </div>
             </div>
 
