@@ -10,7 +10,10 @@ export function ThemeToggle({ className }: { className?: string }) {
     const { theme, setTheme, resolvedTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
 
-    useEffect(() => setMounted(true), []);
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setMounted(true);
+    }, []);
 
     if (!mounted) {
         // Prevent hydration mismatch — render a placeholder

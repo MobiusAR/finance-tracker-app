@@ -14,7 +14,7 @@ import { NetWorthTrendChart } from '@/components/charts/NetWorthTrendChart';
 import { useNetWorthBreakdown } from '@/hooks/useAssets';
 import { useSpendingSummary } from '@/hooks/useTransactions';
 import { useNetWorthHistory } from '@/hooks/useNetWorthHistory';
-import { TrendingUp, TrendingDown, Wallet, CreditCard, Camera, History, PieChart, Receipt } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, CreditCard, Camera, History, PieChart, Receipt, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -24,6 +24,7 @@ export default function Dashboard() {
     sourceBreakdown,
     totalNetWorth,
     totalAssets,
+    totalCpf,
     totalLiabilities,
     loading: assetsLoading,
   } = useNetWorthBreakdown();
@@ -110,6 +111,25 @@ export default function Dashboard() {
             )}
             <p className="hidden text-xs text-muted-foreground md:block">
               Investments + Cash
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-violet-500">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
+            <CardTitle className="text-[10px] sm:text-xs font-medium md:text-sm truncate mr-1">CPF</CardTitle>
+            <Shield className="h-3 w-3 sm:h-4 sm:w-4 text-violet-500 shrink-0" />
+          </CardHeader>
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            {assetsLoading ? (
+              <Skeleton className="h-7 w-24 md:h-8 md:w-32" />
+            ) : (
+              <div className="text-base sm:text-lg font-bold text-violet-500 md:text-2xl truncate">
+                {formatCurrency(totalCpf)}
+              </div>
+            )}
+            <p className="hidden text-xs text-muted-foreground md:block">
+              Retirement funds
             </p>
           </CardContent>
         </Card>

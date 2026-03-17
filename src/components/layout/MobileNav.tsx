@@ -9,14 +9,16 @@ import {
   Receipt,
   Tags,
   HandCoins,
+  Shield,
 } from 'lucide-react';
 
 const navigation = [
   { name: 'Home', href: '/', icon: LayoutDashboard },
   { name: 'Assets', href: '/assets', icon: TrendingUp },
   { name: 'Loans', href: '/loans', icon: HandCoins },
-  { name: 'Spending', href: '/spending', icon: Receipt },
-  { name: 'Categories', href: '/categories', icon: Tags },
+  { name: 'Income', href: '/income', icon: Shield },
+  { name: 'Spend', href: '/spending', icon: Receipt },
+  { name: 'Tags', href: '/categories', icon: Tags },
 ];
 
 export function MobileNav() {

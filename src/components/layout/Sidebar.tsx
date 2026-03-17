@@ -13,6 +13,7 @@ import {
   TrendingUp,
   HandCoins,
   LogOut,
+  Shield,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ThemeToggle } from './ThemeToggle';
@@ -22,6 +23,7 @@ const navigation = [
   { name: 'Assets', href: '/assets', icon: TrendingUp },
   { name: 'Loans', href: '/loans', icon: HandCoins },
   { name: 'Spending', href: '/spending', icon: Receipt },
+  { name: 'Income & CPF', href: '/income', icon: Shield },
   { name: 'Categories', href: '/categories', icon: Tags },
 ];
 

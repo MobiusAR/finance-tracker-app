@@ -232,18 +232,20 @@ export function useNetWorthBreakdown() {
   const [sourceBreakdown, setSourceBreakdown] = useState<Record<string, SourceBreakdown[]>>({});
   const [totalNetWorth, setTotalNetWorth] = useState(0);
   const [totalAssets, setTotalAssets] = useState(0);
+  const [totalCpf, setTotalCpf] = useState(0);
   const [totalLiabilities, setTotalLiabilities] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const categoryColors: Record<string, string> = {
-    investment: '#22c55e',
-    cash: '#3b82f6',
-    property: '#f97316',
-    liability: '#ef4444',
-  };
-
   const fetchBreakdown = useCallback(async () => {
+    const categoryColors: Record<string, string> = {
+      investment: '#22c55e', // sage
+      cpf: '#8b5cf6', // violet for CPF
+      cash: '#3b82f6', // blue
+      property: '#f97316', // orange
+      liability: '#ef4444', // red
+    };
+
     try {
       setLoading(true);
       const supabase = createClient();
@@ -306,11 +308,14 @@ export function useNetWorthBreakdown() {
 
       // Calculate totals
       let assetsTotal = 0;
+      let cpfTotal = 0;
       let liabilitiesTotal = 0;
 
       breakdownArray.forEach(({ type, value }) => {
         if (type === 'liability') {
           liabilitiesTotal += value;
+        } else if (type === 'cpf') {
+          cpfTotal += value;
         } else {
           assetsTotal += value;
         }
@@ -319,8 +324,10 @@ export function useNetWorthBreakdown() {
       setBreakdown(breakdownArray);
       setSourceBreakdown(sourceTotals);
       setTotalAssets(assetsTotal);
+      setTotalCpf(cpfTotal);
       setTotalLiabilities(liabilitiesTotal);
-      setTotalNetWorth(assetsTotal - liabilitiesTotal);
+      // Net worth still includes CPF
+      setTotalNetWorth(assetsTotal + cpfTotal - liabilitiesTotal);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch breakdown');
     } finally {
@@ -337,6 +344,7 @@ export function useNetWorthBreakdown() {
     sourceBreakdown,
     totalNetWorth,
     totalAssets,
+    totalCpf,
     totalLiabilities,
     loading,
     error,

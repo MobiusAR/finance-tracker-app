@@ -1,6 +1,6 @@
 // Database types for Finance Tracker
 
-export type AssetType = 'investment' | 'cash' | 'property' | 'liability';
+export type AssetType = 'investment' | 'cash' | 'property' | 'liability' | 'cpf';
 
 export interface AssetCategory {
   id: string;
@@ -227,6 +227,28 @@ export interface UpdatePersonalLoan {
   reason?: string | null;
 }
 
+export interface UserSettings {
+  id: string;
+  date_of_birth: string | null;
+  race: 'Chinese' | 'Indian' | 'Malay' | 'Others' | 'None' | null;
+  monthly_mortgage: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IncomeRecord {
+  id: string;
+  month: string;
+  gross_pay: number;
+  bonus: number;
+  employee_cpf: number;
+  employer_cpf: number;
+  shg_deduction: number;
+  net_pay: number;
+  created_at: string;
+  updated_at: string;
+}
+
 // Aggregated data types for charts
 export interface NetWorthBreakdown {
   category: string;
@@ -312,6 +334,16 @@ export interface Database {
         Row: PersonalLoan;
         Insert: CreatePersonalLoan & { id?: string };
         Update: UpdatePersonalLoan;
+      };
+      user_settings: {
+        Row: UserSettings;
+        Insert: Omit<UserSettings, 'id' | 'created_at' | 'updated_at'> & { id?: string };
+        Update: Partial<Omit<UserSettings, 'id' | 'created_at' | 'updated_at'>>;
+      };
+      income_records: {
+        Row: IncomeRecord;
+        Insert: Omit<IncomeRecord, 'id' | 'created_at' | 'updated_at'> & { id?: string };
+        Update: Partial<Omit<IncomeRecord, 'id' | 'created_at' | 'updated_at'>>;
       };
     };
   };
