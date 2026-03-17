@@ -144,18 +144,32 @@ export async function GET(request: Request) {
                      if (cpfAssets) {
                          const oaAsset = cpfAssets.find((a: { id: string; name: string; current_value: number }) => a.name.toUpperCase().includes('ORDINARY') || a.name.toUpperCase().includes('OA'));
                          if (oaAsset) {
+                             const newOaValue = Number(oaAsset.current_value) - settings.monthly_mortgage;
                              const { error: oaUpdateError } = await supabase.from('assets')
-                                    .update({ current_value: Number(oaAsset.current_value) - settings.monthly_mortgage })
-                                    .eq('id', oaAsset.id);
+                                .update({ current_value: newOaValue })
+                                .eq('id', oaAsset.id);
                                     
                              if (!oaUpdateError) {
-                                const newHomeLoanTotal = Math.max(0, Number(settings.home_loan_total || 0) - settings.monthly_mortgage);
-
                                 await supabase.from('user_settings').update({ 
-                                    last_mortgage_processed_date: today.toISOString().split('T')[0],
-                                    home_loan_total: newHomeLoanTotal
+                                    last_mortgage_processed_date: today.toISOString().split('T')[0]
                                 }).eq('id', settings.id);
                                 
+                                // Decrease explicitly mapped Home Loan Liability asset if configured
+                                if (settings.home_loan_asset_id) {
+                                    const { data: homeLoanAsset } = await supabase.from('assets')
+                                        .select('id, current_value')
+                                        .eq('id', settings.home_loan_asset_id)
+                                        .single();
+                                        
+                                    if (homeLoanAsset) {
+                                        // Liabilities are tracked as positive debt values
+                                        const newLiabilityValue = Math.max(0, Number(homeLoanAsset.current_value) - settings.monthly_mortgage);
+                                        await supabase.from('assets')
+                                            .update({ current_value: newLiabilityValue })
+                                            .eq('id', homeLoanAsset.id);
+                                    }
+                                }
+
                                 mortgageProcessed = true;
                              }
                          }

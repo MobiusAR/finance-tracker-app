@@ -8,12 +8,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Shield, Home, Briefcase, Settings } from 'lucide-react';
+import { Shield, Home, Briefcase, Settings, Link as LinkIcon } from 'lucide-react';
 import { useUserSettings } from '@/hooks/useIncomeAndCPF';
+import { useAssets } from '@/hooks/useAssets';
 import { Race } from '@/lib/shgCalculations';
 
 export default function IncomeAutomationPage() {
   const { settings, loading: settingsLoading, updateSettings } = useUserSettings();
+  const { assets, loading: assetsLoading } = useAssets();
+  
+  // Isolate Liability Assets for the dropdown
+  const liabilityAssets = assets.filter(a => a.category?.type === 'liability');
 
   // Settings State
   const [dob, setDob] = useState<string>('');
@@ -28,7 +33,7 @@ export default function IncomeAutomationPage() {
   // Home Loan State
   const [mortgage, setMortgage] = useState<string>('0');
   const [mortgagePayDay, setMortgagePayDay] = useState<string>('15');
-  const [homeLoanTotal, setHomeLoanTotal] = useState<string>('0');
+  const [homeLoanAssetId, setHomeLoanAssetId] = useState<string>('none');
 
   const [savingSettings, setSavingSettings] = useState(false);
 
@@ -45,12 +50,15 @@ export default function IncomeAutomationPage() {
 
       if (settings.monthly_mortgage) setMortgage(settings.monthly_mortgage.toString());
       if (settings.mortgage_pay_day) setMortgagePayDay(settings.mortgage_pay_day.toString());
-      if (settings.home_loan_total) setHomeLoanTotal(settings.home_loan_total.toString());
+      if (settings.home_loan_asset_id) setHomeLoanAssetId(settings.home_loan_asset_id);
     }
   }, [settings, settingsLoading]);
 
   // Derived Values
-  const calculatedMonthsLeft = parseFloat(mortgage) > 0 
+  const selectedAsset = liabilityAssets.find(a => a.id === homeLoanAssetId);
+  const homeLoanTotal = selectedAsset ? selectedAsset.current_value.toString() : '0';
+
+  const calculatedMonthsLeft = parseFloat(mortgage) > 0 && selectedAsset
     ? Math.ceil(parseFloat(homeLoanTotal) / parseFloat(mortgage)) 
     : 0;
 
@@ -66,7 +74,7 @@ export default function IncomeAutomationPage() {
         cpf_pay_day: parseInt(cpfPayDay) || 14,
         monthly_mortgage: parseFloat(mortgage) || 0,
         mortgage_pay_day: parseInt(mortgagePayDay) || 15,
-        home_loan_total: parseFloat(homeLoanTotal) || 0
+        home_loan_asset_id: homeLoanAssetId === 'none' ? null : homeLoanAssetId
       });
       toast.success('Automation settings saved successfully');
     } catch {
@@ -191,14 +199,34 @@ export default function IncomeAutomationPage() {
           </CardHeader>
           <CardContent className="space-y-4 pt-6 flex-1">
              <div className="space-y-2">
-               <Label htmlFor="homeLoanTotal">Total Loan Outstanding</Label>
-               <div className="relative">
-                 <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
-                 <Input id="homeLoanTotal" type="number" className="pl-7" value={homeLoanTotal} onChange={(e) => setHomeLoanTotal(e.target.value)} />
+               <Label htmlFor="homeLoanAsset">Linked Liability Asset</Label>
+               <Select value={homeLoanAssetId} onValueChange={setHomeLoanAssetId} disabled={assetsLoading}>
+                 <SelectTrigger id="homeLoanAsset">
+                   <SelectValue placeholder={assetsLoading ? "Loading assets..." : "Select Home Loan Asset"} />
+                 </SelectTrigger>
+                 <SelectContent>
+                   <SelectItem value="none">None (Do not track)</SelectItem>
+                   {liabilityAssets.map(asset => (
+                     <SelectItem key={asset.id} value={asset.id}>
+                       {asset.name}
+                     </SelectItem>
+                   ))}
+                 </SelectContent>
+               </Select>
+               <div className="text-xs text-muted-foreground pt-1 flex items-center gap-1">
+                 <LinkIcon className="h-3 w-3" />
+                 Maps exactly to your main Asset Liabilities
                </div>
              </div>
 
              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="homeLoanTotal">Outstanding Balance</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
+                    <Input id="homeLoanTotal" type="text" className="pl-7 bg-muted/50 text-muted-foreground" value={homeLoanTotal} disabled />
+                  </div>
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="mortgage">Monthly Payment</Label>
                   <div className="relative">
