@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { UserSettings, IncomeRecord } from '@/lib/supabase/types';
 
@@ -39,6 +39,11 @@ export function useUserSettings() {
       setLoading(false);
     }
   }, [supabase]);
+
+  // Automatically fetch on mount
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
 
   const updateSettings = async (updates: Partial<Omit<UserSettings, 'id' | 'created_at' | 'updated_at'>>) => {
     try {

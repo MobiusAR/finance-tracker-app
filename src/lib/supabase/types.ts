@@ -232,6 +232,16 @@ export interface UserSettings {
   date_of_birth: string | null;
   race: 'Chinese' | 'Indian' | 'Malay' | 'Others' | 'None' | null;
   monthly_mortgage: number;
+  basic_salary: number;
+  basic_bonus: number;
+  salary_pay_day: number;
+  cpf_pay_day: number;
+  mortgage_pay_day: number;
+  home_loan_total: number;
+  home_loan_months_remaining: number;
+  last_salary_processed_date: string | null;
+  last_cpf_processed_date: string | null;
+  last_mortgage_processed_date: string | null;
   created_at: string;
   updated_at: string;
 }
