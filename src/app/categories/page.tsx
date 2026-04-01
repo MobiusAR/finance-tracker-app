@@ -329,8 +329,8 @@ export default function CategoriesPage() {
       <SurplusAdjustmentForm
         open={adjustmentOpen}
         onOpenChange={setAdjustmentOpen}
-        onSubmit={async (id, val) => {
-          await updateSurplusManualAdjustment(id, val);
+        onSubmit={async (id, val, desc) => {
+          await updateSurplusManualAdjustment(id, val, desc);
           refetchSurplus();
         }}
         surplusList={monthlyBreakdown}

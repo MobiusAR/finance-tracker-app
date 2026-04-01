@@ -72,6 +72,7 @@ export interface BudgetSurplus {
   surplus_amount: number;
   discretionary_allowance: number;
   manual_adjustments: number;
+  adjustment_description: string | null;
   created_at: string;
   updated_at: string;
 }

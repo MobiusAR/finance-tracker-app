@@ -19,7 +19,7 @@ import { format, parseISO } from 'date-fns';
 interface SurplusAdjustmentFormProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onSubmit: (id: string, manual_adjustments: number) => Promise<void>;
+    onSubmit: (id: string, manual_adjustments: number, description: string) => Promise<void>;
     surplusList: BudgetSurplus[];
 }
 
@@ -31,6 +31,7 @@ export function SurplusAdjustmentForm({
 }: SurplusAdjustmentFormProps) {
     const [selectedSurplusId, setSelectedSurplusId] = useState('');
     const [adjustmentValue, setAdjustmentValue] = useState('');
+    const [description, setDescription] = useState('');
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -40,9 +41,11 @@ export function SurplusAdjustmentForm({
                 const latest = surplusList[surplusList.length - 1];
                 setSelectedSurplusId(latest.id);
                 setAdjustmentValue(latest.manual_adjustments?.toString() || '0');
+                setDescription(latest.adjustment_description || '');
             } else {
                 setSelectedSurplusId('');
                 setAdjustmentValue('0');
+                setDescription('');
             }
         }
     }, [open, surplusList]);
@@ -52,6 +55,7 @@ export function SurplusAdjustmentForm({
         const selected = surplusList.find(s => s.id === id);
         if (selected) {
             setAdjustmentValue(selected.manual_adjustments?.toString() || '0');
+            setDescription(selected.adjustment_description || '');
         }
     };
 
@@ -65,7 +69,7 @@ export function SurplusAdjustmentForm({
 
         try {
             setLoading(true);
-            await onSubmit(selectedSurplusId, parseFloat(adjustmentValue) || 0);
+            await onSubmit(selectedSurplusId, parseFloat(adjustmentValue) || 0, description.trim());
             toast.success('Surplus adjustment saved!');
             onOpenChange(false);
         } catch (error) {
@@ -116,6 +120,18 @@ export function SurplusAdjustmentForm({
                             />
                         </div>
 
+                        <div className="grid gap-2">
+                            <Label htmlFor="adjustmentDescription">Description (optional)</Label>
+                            <textarea
+                                id="adjustmentDescription"
+                                className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="e.g. Company benefits, tax refund"
+                                rows={2}
+                            />
+                        </div>
+
                         {selectedSurplusId && surplusList.find(s => s.id === selectedSurplusId) && (
                             <div className="bg-muted p-3 rounded-md mt-2 space-y-2">
                                 <div className="text-sm flex justify-between">
@@ -147,3 +163,4 @@ export function SurplusAdjustmentForm({
         </Dialog>
     );
 }
+

@@ -397,11 +397,30 @@ export function useSurplusConfig() {
   return { config, loading, error, refetch: fetchConfig, updateConfig };
 }
 
-export async function updateSurplusManualAdjustment(id: string, manual_adjustments: number) {
+export async function updateSurplusManualAdjustment(id: string, manual_adjustments: number, adjustment_description?: string) {
   const supabase = createClient();
+
+  // First, fetch the current row to get discretionary_allowance and total_spent
+  const { data: existing, error: fetchError } = await supabase
+    .from('budget_surplus')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (fetchError) throw fetchError;
+  if (!existing) throw new Error('Surplus record not found');
+
+  // Recalculate surplus_amount: base surplus (without any adjustments) + new adjustment
+  const baseSurplus = Number(existing.discretionary_allowance) - Number(existing.total_spent);
+  const newSurplusAmount = Math.round((baseSurplus + manual_adjustments) * 100) / 100;
+
   const { data, error } = await supabase
     .from('budget_surplus')
-    .update({ manual_adjustments })
+    .update({
+      manual_adjustments,
+      surplus_amount: newSurplusAmount,
+      adjustment_description: adjustment_description ?? null,
+    })
     .eq('id', id)
     .select()
     .single();
