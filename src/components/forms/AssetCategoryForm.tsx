@@ -33,6 +33,7 @@ const ASSET_TYPES: { value: AssetType; label: string }[] = [
   { value: 'investment', label: 'Investment' },
   { value: 'cash', label: 'Cash & Savings' },
   { value: 'property', label: 'Property' },
+  { value: 'cpf', label: 'CPF' },
   { value: 'liability', label: 'Liability' },
 ];
 
