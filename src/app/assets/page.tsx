@@ -60,6 +60,7 @@ export default function AssetsPage() {
       case 'cash': return 'bg-primary';
       case 'property': return 'bg-terracotta';
       case 'liability': return 'bg-destructive';
+      case 'cpf': return 'bg-amber-500';
       default: return 'bg-muted-foreground';
     }
   };
@@ -70,9 +71,30 @@ export default function AssetsPage() {
       case 'cash': return 'secondary';
       case 'property': return 'outline';
       case 'liability': return 'destructive';
+      case 'cpf': return 'default';
       default: return 'outline';
     }
   };
+
+  const typeLabel = (type: string) => {
+    switch (type) {
+      case 'investment': return 'Invest';
+      case 'cash': return 'Cash';
+      case 'property': return 'Property';
+      case 'liability': return 'Liability';
+      case 'cpf': return 'CPF';
+      default: return type.charAt(0).toUpperCase() + type.slice(1);
+    }
+  };
+
+  // Derive unique category types from actual data, preserving a logical order
+  const typeOrder = ['investment', 'cash', 'cpf', 'property', 'liability'];
+  const activeTypes = [...new Set(categories.map(c => c.type))]
+    .sort((a, b) => {
+      const ai = typeOrder.indexOf(a);
+      const bi = typeOrder.indexOf(b);
+      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+    });
 
   const handleCreateAsset = async (data: CreateAsset | UpdateAsset) => {
     await createAsset(data as CreateAsset);
@@ -187,10 +209,11 @@ export default function AssetsPage() {
               <Tabs value={selectedTab} onValueChange={setSelectedTab}>
                 <TabsList className="h-auto inline-flex w-max">
                   <TabsTrigger value="all" className="text-xs px-2 py-1.5">All</TabsTrigger>
-                  <TabsTrigger value="investment" className="text-xs px-2 py-1.5">Invest</TabsTrigger>
-                  <TabsTrigger value="cash" className="text-xs px-2 py-1.5">Cash</TabsTrigger>
-                  <TabsTrigger value="property" className="text-xs px-2 py-1.5">Property</TabsTrigger>
-                  <TabsTrigger value="liability" className="text-xs px-2 py-1.5">Liability</TabsTrigger>
+                  {activeTypes.map(type => (
+                    <TabsTrigger key={type} value={type} className="text-xs px-2 py-1.5">
+                      {typeLabel(type)}
+                    </TabsTrigger>
+                  ))}
                 </TabsList>
               </Tabs>
             </div>
