@@ -333,6 +333,57 @@ export function useBudgetSurplus() {
       if (error) throw error;
 
       const rows = (data || []) as BudgetSurplus[];
+
+      // -- SYNTHESIZE CURRENT MONTH LIVE PROJECTION --
+      const today = new Date();
+      const currentMonthStr = format(startOfMonth(today), 'yyyy-MM-dd');
+      const hasCurrentMonth = rows.some((r) => r.month === currentMonthStr);
+
+      if (!hasCurrentMonth && startOfMonth(today) >= new Date('2026-03-01')) {
+        const startDate = currentMonthStr;
+        const endDate = format(endOfMonth(today), 'yyyy-MM-dd');
+
+        const [configResult, incomeResult, categoriesResult, transactionsResult] = await Promise.all([
+          supabase.from('surplus_config').select('*').eq('is_singleton', true).single(),
+          supabase.from('income_records').select('net_pay').eq('month', currentMonthStr).single(),
+          supabase.from('spending_categories').select('budget_amount'),
+          supabase
+            .from('transactions')
+            .select('amount')
+            .gte('transaction_date', startDate)
+            .lte('transaction_date', endDate),
+        ]);
+
+        const config = configResult.data || { monthly_income: 0, monthly_savings_target: 0 };
+        const activeIncome = (incomeResult.data && incomeResult.data.net_pay)
+          ? Number(incomeResult.data.net_pay)
+          : Number(config.monthly_income);
+
+        const discretionaryAllowance = activeIncome - Number(config.monthly_savings_target);
+
+        const totalBudget = (categoriesResult.data || []).reduce(
+          (sum, c) => sum + (Number(c.budget_amount) || 0),
+          0
+        );
+
+        const totalSpent = (transactionsResult.data || []).reduce(
+          (sum, t) => sum + Number(t.amount),
+          0
+        );
+
+        const surplusAmount = Math.round((discretionaryAllowance - totalSpent) * 100) / 100;
+
+        rows.push({
+          id: 'live-projection',
+          month: currentMonthStr,
+          total_budget: totalBudget,
+          total_spent: totalSpent,
+          surplus_amount: surplusAmount,
+          discretionary_allowance: discretionaryAllowance,
+          manual_adjustments: 0,
+        } as BudgetSurplus);
+      }
+
       setMonthlyBreakdown(rows);
       setTotalSurplus(
         rows.reduce((sum, r) => sum + Number(r.surplus_amount), 0)

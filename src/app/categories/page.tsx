@@ -183,6 +183,11 @@ export default function CategoriesPage() {
                     ? 'Base Initial Balance'
                     : `${totalSurplus + (config?.initial_balance || 0) >= 0 ? 'Accumulated savings' : 'Overspent'} · since Mar 2026`}
                 </p>
+                {monthlyBreakdown.find(m => m.id === 'live-projection') && (
+                   <p className="text-[10px] sm:text-xs font-semibold mt-1 opacity-80" title="Month-To-Date projected surplus">
+                      Live MTD: {formatCurrency(monthlyBreakdown.find(m => m.id === 'live-projection')!.surplus_amount)}
+                   </p>
+                )}
               </div>
             )}
           </CardContent>

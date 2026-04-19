@@ -34,11 +34,13 @@ export function SurplusAdjustmentForm({
     const [description, setDescription] = useState('');
     const [loading, setLoading] = useState(false);
 
+    const validSurplusList = surplusList.filter(s => s.id !== 'live-projection');
+
     useEffect(() => {
         if (open) {
-            if (surplusList.length > 0) {
-                // Default to the most recent month
-                const latest = surplusList[surplusList.length - 1];
+            if (validSurplusList.length > 0) {
+                // Default to the most recent valid month
+                const latest = validSurplusList[validSurplusList.length - 1];
                 setSelectedSurplusId(latest.id);
                 setAdjustmentValue(latest.manual_adjustments?.toString() || '0');
                 setDescription(latest.adjustment_description || '');
@@ -52,7 +54,7 @@ export function SurplusAdjustmentForm({
 
     const handleSelectChange = (id: string) => {
         setSelectedSurplusId(id);
-        const selected = surplusList.find(s => s.id === id);
+        const selected = validSurplusList.find(s => s.id === id);
         if (selected) {
             setAdjustmentValue(selected.manual_adjustments?.toString() || '0');
             setDescription(selected.adjustment_description || '');
@@ -99,8 +101,8 @@ export function SurplusAdjustmentForm({
                                 value={selectedSurplusId}
                                 onChange={(e) => handleSelectChange(e.target.value)}
                             >
-                                {surplusList.length === 0 && <option value="" disabled>No surplus records found</option>}
-                                {surplusList.map(s => (
+                                {validSurplusList.length === 0 && <option value="" disabled>No surplus records found</option>}
+                                {validSurplusList.map(s => (
                                     <option key={s.id} value={s.id}>
                                         {format(parseISO(s.month), 'MMMM yyyy')}
                                     </option>
@@ -132,18 +134,18 @@ export function SurplusAdjustmentForm({
                             />
                         </div>
 
-                        {selectedSurplusId && surplusList.find(s => s.id === selectedSurplusId) && (
+                        {selectedSurplusId && validSurplusList.find(s => s.id === selectedSurplusId) && (
                             <div className="bg-muted p-3 rounded-md mt-2 space-y-2">
                                 <div className="text-sm flex justify-between">
                                     <span className="text-muted-foreground">Original Surplus:</span>
                                     <span>
-                                        ${(surplusList.find(s => s.id === selectedSurplusId)!.surplus_amount - surplusList.find(s => s.id === selectedSurplusId)!.manual_adjustments).toFixed(2)}
+                                        ${(validSurplusList.find(s => s.id === selectedSurplusId)!.surplus_amount - validSurplusList.find(s => s.id === selectedSurplusId)!.manual_adjustments).toFixed(2)}
                                     </span>
                                 </div>
                                 <div className="text-sm flex justify-between font-semibold border-t pt-2 border-border">
                                     <span>New Surplus Amount:</span>
-                                    <span className={surplusList.find(s => s.id === selectedSurplusId)!.surplus_amount - surplusList.find(s => s.id === selectedSurplusId)!.manual_adjustments + (parseFloat(adjustmentValue) || 0) >= 0 ? "text-sage" : "text-destructive"}>
-                                        ${(surplusList.find(s => s.id === selectedSurplusId)!.surplus_amount - surplusList.find(s => s.id === selectedSurplusId)!.manual_adjustments + (parseFloat(adjustmentValue) || 0)).toFixed(2)}
+                                    <span className={validSurplusList.find(s => s.id === selectedSurplusId)!.surplus_amount - validSurplusList.find(s => s.id === selectedSurplusId)!.manual_adjustments + (parseFloat(adjustmentValue) || 0) >= 0 ? "text-sage" : "text-destructive"}>
+                                        ${(validSurplusList.find(s => s.id === selectedSurplusId)!.surplus_amount - validSurplusList.find(s => s.id === selectedSurplusId)!.manual_adjustments + (parseFloat(adjustmentValue) || 0)).toFixed(2)}
                                     </span>
                                 </div>
                             </div>

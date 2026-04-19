@@ -41,9 +41,10 @@ export async function GET(request: Request) {
         const endDate = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0)
             .toISOString().slice(0, 10);
 
-        // Fetch global config, total budget (sum of all category budgets) and total spending in parallel
-        const [configResult, categoriesResult, transactionsResult] = await Promise.all([
+        // Fetch global config, income record, total budget (sum of all category budgets) and total spending in parallel
+        const [configResult, incomeResult, categoriesResult, transactionsResult] = await Promise.all([
             supabase.from('surplus_config').select('*').eq('is_singleton', true).single(),
+            supabase.from('income_records').select('net_pay').eq('month', monthStr).single(),
             supabase.from('spending_categories').select('budget_amount'),
             supabase
                 .from('transactions')
@@ -57,7 +58,13 @@ export async function GET(request: Request) {
 
         // If no config exists, default to 0 for income and savings
         const config = configResult.data || { monthly_income: 0, monthly_savings_target: 0 };
-        const discretionaryAllowance = Number(config.monthly_income) - Number(config.monthly_savings_target);
+        
+        // Use actual net_pay from income_records if it exists, otherwise fallback to configured monthly_income
+        const activeIncome = (incomeResult.data && incomeResult.data.net_pay) 
+            ? Number(incomeResult.data.net_pay) 
+            : Number(config.monthly_income);
+
+        const discretionaryAllowance = activeIncome - Number(config.monthly_savings_target);
 
         const totalBudget = (categoriesResult.data || []).reduce(
             (sum, c) => sum + (Number(c.budget_amount) || 0),
