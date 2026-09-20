@@ -5,27 +5,10 @@ import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
-import {
-  LayoutDashboard,
-  Wallet,
-  Receipt,
-  Tags,
-  TrendingUp,
-  HandCoins,
-  LogOut,
-  Shield,
-} from 'lucide-react';
+import { Wallet, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
+import { navigation } from '@/lib/navigation';
 import { ThemeToggle } from './ThemeToggle';
-
-const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Assets', href: '/assets', icon: TrendingUp },
-  { name: 'Loans', href: '/loans', icon: HandCoins },
-  { name: 'Spending', href: '/spending', icon: Receipt },
-  { name: 'Income & CPF', href: '/income', icon: Shield },
-  { name: 'Categories', href: '/categories', icon: Tags },
-];
 
 export function Sidebar() {
   const pathname = usePathname();

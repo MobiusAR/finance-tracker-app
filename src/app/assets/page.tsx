@@ -29,6 +29,18 @@ import { Plus, MoreHorizontal, Pencil, Trash2, Building, FolderTree, Settings, C
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { formatCurrency } from '@/lib/format';
+import { assetTypeColor } from '@/lib/colors';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function AssetsPage() {
   const { assets, loading, createAsset, updateAsset, deleteAsset, refetch } = useAssets();
@@ -44,25 +56,23 @@ export default function AssetsPage() {
   const [selectedTab, setSelectedTab] = useState('all');
   const [mainTab, setMainTab] = useState('assets');
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    type: 'asset' | 'source' | 'category';
+    id: string;
+    message: string;
+  } | null>(null);
 
-  const formatCurrency = (value: number, currency: string = 'SGD') => {
-    return new Intl.NumberFormat('en-SG', {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    const { type, id } = deleteTarget;
+    if (type === 'asset') await handleDeleteAsset(id);
+    else if (type === 'source') await handleDeleteSource(id);
+    else if (type === 'category') await handleDeleteCategory(id);
+    setDeleteTarget(null);
   };
 
   const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'investment': return 'bg-sage';
-      case 'cash': return 'bg-primary';
-      case 'property': return 'bg-terracotta';
-      case 'liability': return 'bg-destructive';
-      case 'cpf': return 'bg-amber-500';
-      default: return 'bg-muted-foreground';
-    }
+    return assetTypeColor(type);
   };
 
   const getTypeBadgeVariant = (type: string) => {
@@ -109,13 +119,11 @@ export default function AssetsPage() {
   };
 
   const handleDeleteAsset = async (id: string) => {
-    if (confirm('Delete this asset?')) {
-      try {
-        await deleteAsset(id);
-        toast.success('Asset deleted');
-      } catch {
-        toast.error('Failed to delete');
-      }
+    try {
+      await deleteAsset(id);
+      toast.success('Asset deleted');
+    } catch {
+      toast.error('Failed to delete');
     }
   };
 
@@ -132,14 +140,12 @@ export default function AssetsPage() {
   };
 
   const handleDeleteSource = async (id: string) => {
-    if (confirm('Delete this source? Assets using it will also be deleted.')) {
-      try {
-        await deleteSource(id);
-        toast.success('Source deleted');
-        refetch();
-      } catch {
-        toast.error('Failed to delete');
-      }
+    try {
+      await deleteSource(id);
+      toast.success('Source deleted');
+      refetch();
+    } catch {
+      toast.error('Failed to delete');
     }
   };
 
@@ -156,15 +162,13 @@ export default function AssetsPage() {
   };
 
   const handleDeleteCategory = async (id: string) => {
-    if (confirm('Delete this category? All related sources and assets will be deleted.')) {
-      try {
-        await deleteCategory(id);
-        toast.success('Category deleted');
-        refetchSources();
-        refetch();
-      } catch {
-        toast.error('Failed to delete');
-      }
+    try {
+      await deleteCategory(id);
+      toast.success('Category deleted');
+      refetchSources();
+      refetch();
+    } catch {
+      toast.error('Failed to delete');
     }
   };
 
@@ -229,7 +233,7 @@ export default function AssetsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-muted-foreground sm:text-sm">Total Value</p>
-                  <p className="text-xl font-bold sm:text-2xl">{formatCurrency(Math.abs(totalValue))}</p>
+                  <p className="text-xl font-bold sm:text-2xl">{formatCurrency(Math.abs(totalValue), 'SGD', 0)}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-lg font-semibold sm:text-xl">{filteredAssets.length}</p>
@@ -267,16 +271,24 @@ export default function AssetsPage() {
                   <Card key={categoryName}>
                     <CardHeader
                       className="p-3 cursor-pointer md:p-4"
+                      role="button"
+                      tabIndex={0}
                       onClick={() => setExpandedCategory(isExpanded ? null : categoryName)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setExpandedCategory(isExpanded ? null : categoryName);
+                        }
+                      }}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className={`h-2.5 w-2.5 rounded-full ${getTypeColor(category?.type || '')}`} />
+                          <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: getTypeColor(category?.type || '') }} />
                           <CardTitle className="text-sm md:text-base">{categoryName}</CardTitle>
                           <Badge variant="secondary" className="text-xs">{categoryAssets.length}</Badge>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold md:text-base">{formatCurrency(categoryTotal)}</span>
+                          <span className="text-sm font-semibold md:text-base">{formatCurrency(categoryTotal, 'SGD', 0)}</span>
                           <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                         </div>
                       </div>
@@ -296,10 +308,15 @@ export default function AssetsPage() {
                                 </p>
                               </div>
                               <div className="flex items-center gap-2">
-                                <span className="font-semibold">{formatCurrency(Number(asset.current_value), asset.currency)}</span>
+                                <div className="text-right">
+                                  <div className="font-semibold">{formatCurrency(Number(asset.current_value), asset.currency, 0)}</div>
+                                  {asset.currency !== 'SGD' && asset.value_sgd != null && (
+                                    <div className="text-xs text-muted-foreground">≈ {formatCurrency(asset.value_sgd, 'SGD', 0)}</div>
+                                  )}
+                                </div>
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <Button variant="ghost" size="icon" className="h-10 w-10" aria-label="Asset actions">
                                       <MoreHorizontal className="h-4 w-4" />
                                     </Button>
                                   </DropdownMenuTrigger>
@@ -307,7 +324,7 @@ export default function AssetsPage() {
                                     <DropdownMenuItem onClick={() => { setEditingAsset(asset); setAssetFormOpen(true); }}>
                                       <Pencil className="mr-2 h-4 w-4" />Edit
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleDeleteAsset(asset.id)} className="text-destructive">
+                                    <DropdownMenuItem onClick={() => setDeleteTarget({ type: 'asset', id: asset.id, message: 'Delete this asset?' })} className="text-destructive">
                                       <Trash2 className="mr-2 h-4 w-4" />Delete
                                     </DropdownMenuItem>
                                   </DropdownMenuContent>
@@ -342,19 +359,22 @@ export default function AssetsPage() {
                                   </TableCell>
                                   <TableCell>{asset.source?.name || '-'}</TableCell>
                                   <TableCell className="text-right">
-                                    {formatCurrency(Number(asset.current_value), asset.currency)}
+                                    {formatCurrency(Number(asset.current_value), asset.currency, 0)}
+                                    {asset.currency !== 'SGD' && asset.value_sgd != null && (
+                                      <div className="text-xs text-muted-foreground">≈ {formatCurrency(asset.value_sgd, 'SGD', 0)}</div>
+                                    )}
                                   </TableCell>
                                   <TableCell className="text-muted-foreground">{format(new Date(asset.updated_at), 'MMM d')}</TableCell>
                                   <TableCell>
                                     <DropdownMenu>
                                       <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>
+                                        <Button variant="ghost" size="icon" aria-label="Asset actions"><MoreHorizontal className="h-4 w-4" /></Button>
                                       </DropdownMenuTrigger>
                                       <DropdownMenuContent align="end">
                                         <DropdownMenuItem onClick={() => { setEditingAsset(asset); setAssetFormOpen(true); }}>
                                           <Pencil className="mr-2 h-4 w-4" />Edit
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleDeleteAsset(asset.id)} className="text-destructive">
+                                        <DropdownMenuItem onClick={() => setDeleteTarget({ type: 'asset', id: asset.id, message: 'Delete this asset?' })} className="text-destructive">
                                           <Trash2 className="mr-2 h-4 w-4" />Delete
                                         </DropdownMenuItem>
                                       </DropdownMenuContent>
@@ -397,7 +417,7 @@ export default function AssetsPage() {
                   {categories.map((cat) => (
                     <div key={cat.id} className="flex items-center justify-between rounded-lg border p-2.5">
                       <div className="flex items-center gap-2">
-                        <div className={`h-2.5 w-2.5 rounded-full ${getTypeColor(cat.type)}`} />
+                        <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: getTypeColor(cat.type) }} />
                         <span className="text-sm font-medium">{cat.name}</span>
                         <Badge variant={getTypeBadgeVariant(cat.type) as "default" | "secondary" | "destructive" | "outline"} className="text-xs">
                           {cat.type}
@@ -405,13 +425,13 @@ export default function AssetsPage() {
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-10 w-10" aria-label="Item actions"><MoreHorizontal className="h-4 w-4" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => { setEditingCategory(cat); setCategoryFormOpen(true); }}>
                             <Pencil className="mr-2 h-4 w-4" />Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDeleteCategory(cat.id)} className="text-destructive">
+                          <DropdownMenuItem onClick={() => setDeleteTarget({ type: 'category', id: cat.id, message: 'Delete this category? All related sources and assets will be deleted.' })} className="text-destructive">
                             <Trash2 className="mr-2 h-4 w-4" />Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -449,13 +469,13 @@ export default function AssetsPage() {
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-10 w-10" aria-label="Item actions"><MoreHorizontal className="h-4 w-4" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => { setEditingSource(src); setSourceFormOpen(true); }}>
                             <Pencil className="mr-2 h-4 w-4" />Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDeleteSource(src.id)} className="text-destructive">
+                          <DropdownMenuItem onClick={() => setDeleteTarget({ type: 'source', id: src.id, message: 'Delete this source? Assets using it will also be deleted.' })} className="text-destructive">
                             <Trash2 className="mr-2 h-4 w-4" />Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -495,6 +515,21 @@ export default function AssetsPage() {
         onSubmit={editingCategory ? handleUpdateCategory : handleCreateCategory}
         category={editingCategory}
       />
+
+      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+            <AlertDialogDescription>{deleteTarget?.message}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-white hover:bg-destructive/90" onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

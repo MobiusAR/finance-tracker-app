@@ -21,21 +21,25 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { SpendingChart } from '@/components/charts/SpendingChart';
+import { MonthlySpendingTrendChart } from '@/components/charts/MonthlySpendingTrendChart';
 import { TransactionForm } from '@/components/forms/TransactionForm';
-import { useTransactions, useSpendingCategories, useSpendingSummary } from '@/hooks/useTransactions';
+import { useTransactions, useSpendingCategories, useSpendingSummary, useMonthlySpendingTrend, useAllTransactions } from '@/hooks/useTransactions';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Transaction, CreateTransaction, UpdateTransaction } from '@/lib/supabase/types';
 import { Plus, MoreHorizontal, Pencil, Trash2, ChevronLeft, ChevronRight, ChevronDown, Search, X, SlidersHorizontal, CalendarDays } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, addMonths, subMonths } from 'date-fns';
-
-export const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('en-SG', {
-    style: 'currency',
-    currency: 'SGD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-};
+import { formatCurrency } from '@/lib/format';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function SpendingPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -43,8 +47,10 @@ export default function SpendingPage() {
     useTransactions(currentMonth);
   const { categories } = useSpendingCategories();
   const { summary } = useSpendingSummary(1, currentMonth);
+  const { trend, loading: trendLoading } = useMonthlySpendingTrend(12);
 
   const [formOpen, setFormOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [openDates, setOpenDates] = useState<Set<string>>(new Set());
   const prevMonthRef = useRef<string>('');
@@ -58,6 +64,9 @@ export default function SpendingPage() {
 
   const hasActiveFilters = searchQuery || categoryFilter !== 'all' || amountMin || amountMax;
 
+  const isSearchingAll = searchQuery.trim().length > 0;
+  const { transactions: allTransactions, loading: allLoading } = useAllTransactions(isSearchingAll);
+
   const clearAllFilters = () => {
     setSearchQuery('');
     setCategoryFilter('all');
@@ -65,7 +74,9 @@ export default function SpendingPage() {
     setAmountMax('');
   };
 
-  const filteredTransactions = transactions.filter((t) => {
+  const sourceTransactions = isSearchingAll ? allTransactions : transactions;
+
+  const filteredTransactions = sourceTransactions.filter((t) => {
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       const matchDesc = t.description ? t.description.toLowerCase().includes(q) : false;
@@ -128,13 +139,11 @@ export default function SpendingPage() {
   };
 
   const handleDeleteTransaction = async (id: string) => {
-    if (confirm('Are you sure you want to delete this transaction?')) {
-      try {
-        await deleteTransaction(id);
-        toast.success('Transaction deleted');
-      } catch (error) {
-        toast.error('Failed to delete transaction');
-      }
+    try {
+      await deleteTransaction(id);
+      toast.success('Transaction deleted');
+    } catch (error) {
+      toast.error('Failed to delete transaction');
     }
   };
 
@@ -248,7 +257,7 @@ export default function SpendingPage() {
             <CardDescription className="text-xs sm:text-sm">{format(currentMonth, 'MMMM yyyy')}</CardDescription>
           </CardHeader>
           <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
-            <div className="text-xl font-bold sm:text-3xl">{formatCurrency(monthlyTotal)}</div>
+            <div className="text-xl font-bold sm:text-3xl">{formatCurrency(monthlyTotal, 'SGD', 0)}</div>
             <p className="text-xs text-muted-foreground sm:text-sm">
               {transactions.length} transaction{transactions.length !== 1 ? 's' : ''}
             </p>
@@ -266,8 +275,25 @@ export default function SpendingPage() {
         </Card>
       </div>
 
+      {/* Monthly Spending Trend */}
+      <div className="mb-4 sm:mb-6">
+        <Card>
+          <CardHeader className="p-3 pb-1 sm:p-6 sm:pb-2">
+            <CardTitle className="text-sm sm:text-lg">Monthly Spending Trend</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Last 12 months</CardDescription>
+          </CardHeader>
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            {trendLoading ? (
+              <Skeleton className="h-[250px] w-full rounded-xl" />
+            ) : (
+              <MonthlySpendingTrendChart data={trend} />
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Search & Filters */}
-      {!loading && transactions.length > 0 && (
+      {(!loading && transactions.length > 0) || isSearchingAll ? (
         <div className="mb-4 space-y-3 sm:mb-6">
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
@@ -360,9 +386,10 @@ export default function SpendingPage() {
           {hasActiveFilters && (
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>
-                Showing {filteredTransactions.length} of {transactions.length} transactions
-                {filteredTransactions.length !== transactions.length && (
-                  <> &middot; {formatCurrency(filteredTotal)}</>
+                {isSearchingAll ? 'Searching all history · ' : ''}
+                Showing {filteredTransactions.length} of {sourceTransactions.length} transactions
+                {filteredTransactions.length !== sourceTransactions.length && (
+                  <> &middot; {formatCurrency(filteredTotal, 'SGD', 0)}</>
                 )}
               </span>
               <button onClick={clearAllFilters} className="underline hover:text-foreground">
@@ -371,190 +398,204 @@ export default function SpendingPage() {
             </div>
           )}
         </div>
-      )}
+      ) : null}
 
       {/* Transactions List */}
-      {loading ? (
-        <Card>
-          <CardContent className="flex h-40 items-center justify-center text-sm sm:h-64">
-            Loading transactions...
-          </CardContent>
-        </Card>
-      ) : transactions.length === 0 ? (
-        <Card>
-          <CardContent className="flex h-40 flex-col items-center justify-center gap-3 sm:h-64 sm:gap-4">
-            <p className="text-sm text-muted-foreground">No transactions for {format(currentMonth, 'MMM yyyy')}</p>
-            <Button size="sm" onClick={() => setFormOpen(true)}>
-              <Plus className="mr-1 h-4 w-4" />
-              Add Transaction
-            </Button>
-          </CardContent>
-        </Card>
-      ) : filteredTransactions.length === 0 ? (
-        <Card>
-          <CardContent className="flex h-40 flex-col items-center justify-center gap-3 sm:h-64 sm:gap-4">
-            <Search className="h-8 w-8 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">No transactions match your filters</p>
-            <Button size="sm" variant="outline" onClick={clearAllFilters}>
-              <X className="mr-1 h-4 w-4" />
-              Clear filters
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader className="p-3 sm:p-6">
-            <CardTitle className="text-base sm:text-lg">Transactions</CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
-              All expenses for {format(currentMonth, 'MMMM yyyy')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="divide-y">
-              {Object.entries(transactionsByDate)
-                .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
-                .map(([date, dayTransactions]) => {
-                  const dailyTotal = dayTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
-                  const isOpen = openDates.has(date);
-                  return (
-                    <div key={date}>
-                      {/* Date header - clickable toggle */}
-                      <button
-                        onClick={() => toggleDate(date)}
-                        className="w-full flex items-center justify-between px-3 py-2.5 sm:px-6 sm:py-3 hover:bg-muted/50 transition-colors text-left"
-                      >
-                        <div className="flex items-center gap-2">
-                          <ChevronDown
-                            className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform duration-200 ${isOpen ? '' : '-rotate-90'
-                              }`}
-                          />
-                          <span className="text-xs sm:text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                            {format(new Date(date), 'EEE, MMM d')}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            ({dayTransactions.length})
-                          </span>
-                        </div>
-                        <span className="text-sm sm:text-base font-semibold">
-                          {formatCurrency(dailyTotal)}
-                        </span>
-                      </button>
+      {(() => {
+        const listLoading = isSearchingAll ? allLoading : loading;
+        const listTitle = isSearchingAll ? 'Search Results' : 'Transactions';
+        const listDescription = isSearchingAll
+          ? 'Across all history'
+          : `All expenses for ${format(currentMonth, 'MMMM yyyy')}`;
+        const showNoTransactions = !isSearchingAll && transactions.length === 0;
+        const showNoMatch =
+          !listLoading && !showNoTransactions && filteredTransactions.length === 0;
 
-                      {/* Expanded transactions */}
-                      {isOpen && (
-                        <div className="px-3 pb-3 sm:px-6 sm:pb-4">
-                          {/* Mobile: Card-based list */}
-                          <div className="space-y-2 sm:hidden">
-                            {dayTransactions.map((transaction) => (
-                              <div key={transaction.id} className="flex items-center justify-between rounded-lg border p-3">
-                                <div className="flex-1 min-w-0 mr-2">
-                                  <p className="font-medium text-sm truncate">
-                                    {transaction.description || 'No description'}
-                                  </p>
-                                  {transaction.category ? (
-                                    <Badge
-                                      variant="secondary"
-                                      className="mt-1 text-xs"
-                                      style={{
-                                        backgroundColor: `${transaction.category.color}20`,
-                                        color: transaction.category.color,
-                                      }}
-                                    >
-                                      {transaction.category.name}
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant="outline" className="mt-1 text-xs">Uncategorized</Badge>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <span className="font-semibold text-sm whitespace-nowrap">
-                                    {formatCurrency(transaction.amount)}
-                                  </span>
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                      <DropdownMenuItem onClick={() => handleEditTransaction(transaction)}>
-                                        <Pencil className="mr-2 h-4 w-4" />Edit
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => handleDeleteTransaction(transaction.id)} className="text-destructive">
-                                        <Trash2 className="mr-2 h-4 w-4" />Delete
-                                      </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                </div>
-                              </div>
-                            ))}
+        if (listLoading) {
+          return (
+            <Card>
+              <CardContent className="flex h-40 items-center justify-center text-sm sm:h-64">
+                {isSearchingAll ? 'Searching all history...' : 'Loading transactions...'}
+              </CardContent>
+            </Card>
+          );
+        }
+
+        if (showNoTransactions) {
+          return (
+            <Card>
+              <CardContent className="flex h-40 flex-col items-center justify-center gap-3 sm:h-64 sm:gap-4">
+                <p className="text-sm text-muted-foreground">No transactions for {format(currentMonth, 'MMM yyyy')}</p>
+                <Button size="sm" onClick={() => setFormOpen(true)}>
+                  <Plus className="mr-1 h-4 w-4" />
+                  Add Transaction
+                </Button>
+              </CardContent>
+            </Card>
+          );
+        }
+
+        if (showNoMatch) {
+          return (
+            <Card>
+              <CardContent className="flex h-40 flex-col items-center justify-center gap-3 sm:h-64 sm:gap-4">
+                <Search className="h-8 w-8 text-muted-foreground/50" />
+                <p className="text-sm text-muted-foreground">
+                  {isSearchingAll ? 'No transactions match your search' : 'No transactions match your filters'}
+                </p>
+                <Button size="sm" variant="outline" onClick={clearAllFilters}>
+                  <X className="mr-1 h-4 w-4" />
+                  Clear filters
+                </Button>
+              </CardContent>
+            </Card>
+          );
+        }
+
+        return (
+          <Card>
+            <CardHeader className="p-3 sm:p-6">
+              <CardTitle className="text-base sm:text-lg">{listTitle}</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">{listDescription}</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="divide-y">
+                {Object.entries(transactionsByDate)
+                  .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
+                  .map(([date, dayTransactions]) => {
+                    const dailyTotal = dayTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
+                    const isOpen = openDates.has(date);
+                    return (
+                      <div key={date}>
+                        <button
+                          onClick={() => toggleDate(date)}
+                          className="w-full flex items-center justify-between px-3 py-2.5 sm:px-6 sm:py-3 hover:bg-muted/50 transition-colors text-left"
+                        >
+                          <div className="flex items-center gap-2">
+                            <ChevronDown
+                              className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform duration-200 ${isOpen ? '' : '-rotate-90'}`}
+                            />
+                            <span className="text-xs sm:text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                              {format(new Date(date), 'EEE, MMM d')}
+                            </span>
+                            <span className="text-xs text-muted-foreground">({dayTransactions.length})</span>
                           </div>
+                          <span className="text-sm sm:text-base font-semibold">{formatCurrency(dailyTotal)}</span>
+                        </button>
 
-                          {/* Desktop: Row-based list */}
-                          <div className="hidden sm:block space-y-1">
-                            {dayTransactions.map((transaction) => (
-                              <div
-                                key={transaction.id}
-                                className="flex items-center gap-4 rounded-md px-3 py-2 hover:bg-muted/30 transition-colors"
-                              >
-                                <div className="flex-1 min-w-0 text-sm">
-                                  {transaction.description || (
-                                    <span className="text-muted-foreground">No description</span>
-                                  )}
-                                </div>
-                                <div className="shrink-0">
-                                  {transaction.category ? (
-                                    <Badge
-                                      variant="secondary"
-                                      style={{
-                                        backgroundColor: `${transaction.category.color}20`,
-                                        color: transaction.category.color,
-                                        borderColor: transaction.category.color,
-                                      }}
-                                    >
-                                      {transaction.category.name}
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant="outline">Uncategorized</Badge>
-                                  )}
-                                </div>
-                                <div className="w-24 text-right font-medium text-sm shrink-0">
-                                  {formatCurrency(transaction.amount)}
-                                </div>
-                                <div className="shrink-0">
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" size="icon">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                      <DropdownMenuItem onClick={() => handleEditTransaction(transaction)}>
-                                        <Pencil className="mr-2 h-4 w-4" />
-                                        Edit
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        onClick={() => handleDeleteTransaction(transaction.id)}
-                                        className="text-destructive"
+                        {isOpen && (
+                          <div className="px-3 pb-3 sm:px-6 sm:pb-4">
+                            <div className="space-y-2 sm:hidden">
+                              {dayTransactions.map((transaction) => (
+                                <div key={transaction.id} className="flex items-center justify-between rounded-lg border p-3">
+                                  <div className="flex-1 min-w-0 mr-2">
+                                    <p className="font-medium text-sm truncate">
+                                      {transaction.description || 'No description'}
+                                    </p>
+                                    {transaction.category ? (
+                                      <Badge
+                                        variant="secondary"
+                                        className="mt-1 text-xs"
+                                        style={{
+                                          backgroundColor: `${transaction.category.color}20`,
+                                          color: transaction.category.color,
+                                        }}
                                       >
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        Delete
-                                      </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
+                                        {transaction.category.name}
+                                      </Badge>
+                                    ) : (
+                                      <Badge variant="outline" className="mt-1 text-xs">Uncategorized</Badge>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <span className="font-semibold text-sm whitespace-nowrap">
+                                      {formatCurrency(transaction.amount)}
+                                    </span>
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-10 w-10" aria-label="Transaction actions">
+                                          <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={() => handleEditTransaction(transaction)}>
+                                          <Pencil className="mr-2 h-4 w-4" />Edit
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => setDeleteId(transaction.id)} className="text-destructive">
+                                          <Trash2 className="mr-2 h-4 w-4" />Delete
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
+
+                            <div className="hidden sm:block space-y-1">
+                              {dayTransactions.map((transaction) => (
+                                <div
+                                  key={transaction.id}
+                                  className="flex items-center gap-4 rounded-md px-3 py-2 hover:bg-muted/30 transition-colors"
+                                >
+                                  <div className="flex-1 min-w-0 text-sm">
+                                    {transaction.description || (
+                                      <span className="text-muted-foreground">No description</span>
+                                    )}
+                                  </div>
+                                  <div className="shrink-0">
+                                    {transaction.category ? (
+                                      <Badge
+                                        variant="secondary"
+                                        style={{
+                                          backgroundColor: `${transaction.category.color}20`,
+                                          color: transaction.category.color,
+                                          borderColor: transaction.category.color,
+                                        }}
+                                      >
+                                        {transaction.category.name}
+                                      </Badge>
+                                    ) : (
+                                      <Badge variant="outline">Uncategorized</Badge>
+                                    )}
+                                  </div>
+                                  <div className="w-24 text-right font-medium text-sm shrink-0">
+                                    {formatCurrency(transaction.amount)}
+                                  </div>
+                                  <div className="shrink-0">
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" aria-label="Transaction actions">
+                                          <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={() => handleEditTransaction(transaction)}>
+                                          <Pencil className="mr-2 h-4 w-4" />
+                                          Edit
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={() => setDeleteId(transaction.id)}
+                                          className="text-destructive"
+                                        >
+                                          <Trash2 className="mr-2 h-4 w-4" />
+                                          Delete
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* Transaction Form Dialog */}
       <TransactionForm
@@ -567,6 +608,29 @@ export default function SpendingPage() {
         onSubmit={editingTransaction ? handleUpdateTransaction : handleCreateTransaction}
         transaction={editingTransaction}
       />
+
+      <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this transaction? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-white hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteId) handleDeleteTransaction(deleteId);
+                setDeleteId(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

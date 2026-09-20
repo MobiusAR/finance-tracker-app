@@ -13,6 +13,7 @@ import {
   NetWorthBreakdown,
   SourceBreakdown,
 } from '@/lib/supabase/types';
+import { ASSET_TYPE_COLORS, DEFAULT_COLOR } from '@/lib/colors';
 
 export function useAssetCategories() {
   const [categories, setCategories] = useState<AssetCategory[]>([]);
@@ -238,14 +239,6 @@ export function useNetWorthBreakdown() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchBreakdown = useCallback(async () => {
-    const categoryColors: Record<string, string> = {
-      investment: '#22c55e', // sage
-      cpf: '#8b5cf6', // violet for CPF
-      cash: '#3b82f6', // blue
-      property: '#f97316', // orange
-      liability: '#ef4444', // red
-    };
-
     try {
       setLoading(true);
       const supabase = createClient();
@@ -268,11 +261,18 @@ export function useNetWorthBreakdown() {
         const categoryName = category.name;
         const categoryType = category.type;
 
+        // Prefer the cron-resolved SGD value; fall back to raw value for
+        // assets that have not been synced yet.
+        const sgdValue =
+          asset.value_sgd != null
+            ? Number(asset.value_sgd)
+            : Number(asset.current_value);
+
         // Category totals
         if (!categoryTotals[categoryName]) {
           categoryTotals[categoryName] = { value: 0, type: categoryType };
         }
-        categoryTotals[categoryName].value += Number(asset.current_value);
+        categoryTotals[categoryName].value += sgdValue;
 
         // Source breakdown within category
         if (!sourceTotals[categoryName]) {
@@ -285,12 +285,12 @@ export function useNetWorthBreakdown() {
         );
 
         if (existingSource) {
-          existingSource.value += Number(asset.current_value);
+          existingSource.value += sgdValue;
           existingSource.assets.push(asset);
         } else {
           sourceTotals[categoryName].push({
             source: sourceName,
-            value: Number(asset.current_value),
+            value: sgdValue,
             assets: [asset],
           });
         }
@@ -302,7 +302,7 @@ export function useNetWorthBreakdown() {
           category,
           type: type as NetWorthBreakdown['type'],
           value,
-          color: categoryColors[type] || '#6b7280',
+          color: ASSET_TYPE_COLORS[type] || DEFAULT_COLOR,
         })
       );
 

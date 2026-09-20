@@ -27,6 +27,10 @@ export const metadata: Metadata = {
   title: "Finance Tracker",
   description: "Personal finance tracker for net worth and spending",
   manifest: "/manifest.json",
+  icons: {
+    icon: [{ url: "/icon-192x192.png", sizes: "192x192", type: "image/png" }],
+    apple: [{ url: "/icon-192x192.png", sizes: "192x192", type: "image/png" }],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

@@ -17,6 +17,17 @@ import { SpendingCategory, CreateSpendingCategory } from '@/lib/supabase/types';
 import { Plus, MoreHorizontal, Pencil, Trash2, AlertTriangle, CheckCircle, PiggyBank, Settings, FileEdit } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { formatCurrency as formatCurrencySgd } from '@/lib/format';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { SurplusConfigForm } from '@/components/forms/SurplusConfigForm';
 import { SurplusAdjustmentForm } from '@/components/forms/SurplusAdjustmentForm';
 
@@ -30,15 +41,11 @@ export default function CategoriesPage() {
   const [configOpen, setConfigOpen] = useState(false);
   const [adjustmentOpen, setAdjustmentOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<SpendingCategory | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const formatCurrency = (value: number | null) => {
     if (value === null) return '-';
-    return new Intl.NumberFormat('en-SG', {
-      style: 'currency',
-      currency: 'SGD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
+    return formatCurrencySgd(value, 'SGD', 0);
   };
 
   const handleCreateCategory = async (data: CreateSpendingCategory) => {
@@ -55,14 +62,12 @@ export default function CategoriesPage() {
   };
 
   const handleDeleteCategory = async (id: string) => {
-    if (confirm('Are you sure you want to delete this category? Transactions with this category will become uncategorized.')) {
-      try {
-        await deleteCategory(id);
-        toast.success('Category deleted');
-        refetch();
-      } catch (err) {
-        toast.error('Failed to delete category');
-      }
+    try {
+      await deleteCategory(id);
+      toast.success('Category deleted');
+      refetch();
+    } catch (err) {
+      toast.error('Failed to delete category');
     }
   };
 
@@ -100,7 +105,7 @@ export default function CategoriesPage() {
           </CardHeader>
           <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
             <div className="text-lg font-bold sm:text-2xl">{formatCurrency(totalBudget)}</div>
-            <p className="text-[10px] text-muted-foreground sm:text-xs">
+            <p className="text-[11px] text-muted-foreground sm:text-xs">
               {budgetStatus.filter((s) => s.budget).length} categories
             </p>
           </CardContent>
@@ -112,7 +117,7 @@ export default function CategoriesPage() {
           </CardHeader>
           <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
             <div className="text-lg font-bold sm:text-2xl">{formatCurrency(totalSpent)}</div>
-            <p className="text-[10px] text-muted-foreground sm:text-xs">
+            <p className="text-[11px] text-muted-foreground sm:text-xs">
               {format(new Date(), 'MMM yyyy')}
             </p>
           </CardContent>
@@ -159,7 +164,7 @@ export default function CategoriesPage() {
                   <PiggyBank className="h-4 w-4 text-muted-foreground sm:h-5 sm:w-5" />
                   <span className="text-lg font-bold text-muted-foreground sm:text-2xl">-</span>
                 </div>
-                <p className="text-[10px] text-muted-foreground sm:text-xs">Starts Mar 2026</p>
+                <p className="text-[11px] text-muted-foreground sm:text-xs">Starts Mar 2026</p>
               </div>
             ) : (
               <div>
@@ -178,13 +183,13 @@ export default function CategoriesPage() {
                     <FileEdit className="h-4 w-4 sm:h-5 sm:w-5" />
                   </Button>
                 </div>
-                <p className="text-[10px] text-muted-foreground sm:text-xs">
+                <p className="text-[11px] text-muted-foreground sm:text-xs">
                   {monthlyBreakdown.length === 0
                     ? 'Base Initial Balance'
                     : `${totalSurplus + (config?.initial_balance || 0) >= 0 ? 'Accumulated savings' : 'Overspent'} · since Mar 2026`}
                 </p>
                 {monthlyBreakdown.find(m => m.id === 'live-projection') && (
-                   <p className="text-[10px] sm:text-xs font-semibold mt-1 opacity-80" title="Month-To-Date projected surplus">
+                   <p className="text-[11px] sm:text-xs font-semibold mt-1 opacity-80" title="Month-To-Date projected surplus">
                       Live MTD: {formatCurrency(monthlyBreakdown.find(m => m.id === 'live-projection')!.surplus_amount)}
                    </p>
                 )}
@@ -263,7 +268,7 @@ export default function CategoriesPage() {
                           Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleDeleteCategory(category.id)}
+                          onClick={() => setDeleteId(category.id)}
                           className="text-destructive"
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
@@ -294,7 +299,7 @@ export default function CategoriesPage() {
                         style={{ width: `${Math.min(percentUsed || 0, 100)}%` }}
                       />
                     </div>
-                    <p className="text-[10px] text-muted-foreground sm:text-xs">
+                    <p className="text-[11px] text-muted-foreground sm:text-xs">
                       {percentUsed !== null ? `${Math.round(percentUsed)}% used` : ''}
                     </p>
                   </div>
@@ -304,7 +309,7 @@ export default function CategoriesPage() {
                       <span className="font-medium">{formatCurrency(spent)}</span>
                       <span className="text-muted-foreground"> spent</span>
                     </div>
-                    <p className="text-[10px] text-muted-foreground sm:text-xs">No budget set</p>
+                    <p className="text-[11px] text-muted-foreground sm:text-xs">No budget set</p>
                   </div>
                 )}
               </CardContent>
@@ -340,6 +345,29 @@ export default function CategoriesPage() {
         }}
         surplusList={monthlyBreakdown}
       />
+
+      <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Category</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this category? Transactions with this category will become uncategorized.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-white hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteId) handleDeleteCategory(deleteId);
+                setDeleteId(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

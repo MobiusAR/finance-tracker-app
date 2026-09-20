@@ -169,8 +169,7 @@ export function useTransactions(month?: Date) {
   };
 }
 
-export function useSpendingSummary(months: number = 1, baseMonth?: Date) {
-  const [summary, setSummary] = useState<SpendingSummary[]>([]);
+export function useSpendingSummary(months: number = 1, baseMonth?: Date) {  const [summary, setSummary] = useState<SpendingSummary[]>([]);
   const [totalSpending, setTotalSpending] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -234,8 +233,108 @@ export function useSpendingSummary(months: number = 1, baseMonth?: Date) {
   return { summary, totalSpending, loading, error, refetch: fetchSummary };
 }
 
-export interface BudgetStatus {
-  category: SpendingCategory;
+export interface MonthlySpendingTrend {
+  month: string;
+  label: string;
+  total: number;
+  count: number;
+}
+
+export function useMonthlySpendingTrend(months: number = 12) {
+  const [trend, setTrend] = useState<MonthlySpendingTrend[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchTrend = useCallback(async () => {
+    try {
+      setLoading(true);
+      const supabase = createClient();
+
+      const anchor = new Date();
+      const start = format(startOfMonth(subMonths(anchor, months - 1)), 'yyyy-MM-dd');
+      const end = format(endOfMonth(anchor), 'yyyy-MM-dd');
+
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('amount, transaction_date')
+        .gte('transaction_date', start)
+        .lte('transaction_date', end);
+
+      if (error) throw error;
+
+      const byMonth: Record<string, { total: number; count: number }> = {};
+      (data || []).forEach((t) => {
+        const key = t.transaction_date.slice(0, 7);
+        if (!byMonth[key]) byMonth[key] = { total: 0, count: 0 };
+        byMonth[key].total += Number(t.amount);
+        byMonth[key].count += 1;
+      });
+
+      const result: MonthlySpendingTrend[] = [];
+      for (let i = months - 1; i >= 0; i--) {
+        const d = subMonths(startOfMonth(anchor), i);
+        const key = format(d, 'yyyy-MM');
+        const entry = byMonth[key] || { total: 0, count: 0 };
+        result.push({
+          month: key,
+          label: format(d, 'MMM yy'),
+          total: entry.total,
+          count: entry.count,
+        });
+      }
+
+      setTrend(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch spending trend');
+    } finally {
+      setLoading(false);
+    }
+  }, [months]);
+
+  useEffect(() => {
+    fetchTrend();
+  }, [fetchTrend]);
+
+  return { trend, loading, error, refetch: fetchTrend };
+}
+
+export function useAllTransactions(enabled: boolean = false) {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchAll = useCallback(async () => {
+    if (!enabled) {
+      setTransactions([]);
+      return;
+    }
+    try {
+      setLoading(true);
+      const supabase = createClient();
+      // Personal-scale data: a single fetch is sufficient for cross-month search.
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*, category:spending_categories(*)')
+        .order('transaction_date', { ascending: false })
+        .limit(1000);
+
+      if (error) throw error;
+      setTransactions(data || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch transactions');
+    } finally {
+      setLoading(false);
+    }
+  }, [enabled]);
+
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll]);
+
+  return { transactions, loading, error, refetch: fetchAll };
+}
+
+export interface BudgetStatus {  category: SpendingCategory;
   spent: number;
   budget: number | null;
   remaining: number | null;

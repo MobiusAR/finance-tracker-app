@@ -12,19 +12,12 @@ import {
 } from 'recharts';
 import { NetWorthHistoryEntry } from '@/hooks/useNetWorthHistory';
 import { format, parseISO } from 'date-fns';
+import { formatCurrency } from '@/lib/format';
+import { TREND_COLORS } from '@/lib/colors';
 
 interface NetWorthTrendChartProps {
   data: NetWorthHistoryEntry[];
 }
-
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('en-SG', {
-    style: 'currency',
-    currency: 'SGD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-};
 
 const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; dataKey: string; color: string }>; label?: string }) => {
   if (active && payload && payload.length) {
@@ -36,7 +29,7 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
             {entry.dataKey === 'netWorth' && 'Net Worth: '}
             {entry.dataKey === 'assets' && 'Assets: '}
             {entry.dataKey === 'liabilities' && 'Liabilities: '}
-            {formatCurrency(entry.value)}
+            {formatCurrency(entry.value, 'SGD', 0)}
           </p>
         ))}
       </div>
@@ -92,25 +85,25 @@ export function NetWorthTrendChart({ data }: NetWorthTrendChartProps) {
           type="monotone"
           dataKey="netWorth"
           name="Net Worth"
-          stroke="#8b5cf6"
+          stroke={TREND_COLORS.netWorth}
           strokeWidth={2}
-          dot={{ fill: '#8b5cf6', strokeWidth: 2 }}
+          dot={{ fill: TREND_COLORS.netWorth, strokeWidth: 2 }}
         />
         <Line
           type="monotone"
           dataKey="assets"
           name="Assets"
-          stroke="#22c55e"
+          stroke={TREND_COLORS.assets}
           strokeWidth={2}
-          dot={{ fill: '#22c55e', strokeWidth: 2 }}
+          dot={{ fill: TREND_COLORS.assets, strokeWidth: 2 }}
         />
         <Line
           type="monotone"
           dataKey="liabilities"
           name="Liabilities"
-          stroke="#ef4444"
+          stroke={TREND_COLORS.liabilities}
           strokeWidth={2}
-          dot={{ fill: '#ef4444', strokeWidth: 2 }}
+          dot={{ fill: TREND_COLORS.liabilities, strokeWidth: 2 }}
         />
       </LineChart>
     </ResponsiveContainer>

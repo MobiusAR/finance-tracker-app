@@ -10,20 +10,13 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, HandCoins, Calendar, Info, Loader2 } from 'lucide-react';
 import { PersonalLoan, CreatePersonalLoan } from '@/lib/supabase/types';
 import { format } from 'date-fns';
+import { formatCurrency } from '@/lib/format';
+import { LOAN_STATUS_COLORS } from '@/lib/colors';
 
 export default function LoansPage() {
     const { loans, loading, createLoan, updateLoan } = useLoans();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [selectedLoan, setSelectedLoan] = useState<PersonalLoan | undefined>();
-
-    const formatCurrency = (value: number, currency: string = 'SGD') => {
-        return new Intl.NumberFormat('en-SG', {
-            style: 'currency',
-            currency: currency,
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-        }).format(value);
-    };
 
     const activeLoans = loans.filter((l) => l.status === 'active');
     const repaidLoans = loans.filter((l) => l.status === 'repaid');
@@ -45,9 +38,9 @@ export default function LoansPage() {
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'active':
-                return <Badge variant="default" className="bg-blue-600">Active</Badge>;
+                return <Badge variant="default" style={{ backgroundColor: LOAN_STATUS_COLORS.active }}>Active</Badge>;
             case 'repaid':
-                return <Badge variant="default" className="bg-emerald-600">Repaid</Badge>;
+                return <Badge variant="default" style={{ backgroundColor: LOAN_STATUS_COLORS.repaid }}>Repaid</Badge>;
             case 'defaulted':
                 return <Badge variant="destructive">Defaulted</Badge>;
             default:
@@ -87,7 +80,7 @@ export default function LoansPage() {
                             <h3 className="text-sm font-medium">Total Outstanding</h3>
                         </div>
                         <div className="mt-2 flex items-baseline gap-2">
-                            <p className="text-2xl font-bold sm:text-3xl text-blue-600">
+                            <p className="text-2xl font-bold sm:text-3xl" style={{ color: LOAN_STATUS_COLORS.active }}>
                                 {formatCurrency(totalOutstanding)}
                             </p>
                         </div>
@@ -102,7 +95,7 @@ export default function LoansPage() {
                             <h3 className="text-sm font-medium">Total Repaid</h3>
                         </div>
                         <div className="mt-2 flex items-baseline gap-2">
-                            <p className="text-2xl font-bold sm:text-3xl text-emerald-600">
+                            <p className="text-2xl font-bold sm:text-3xl" style={{ color: LOAN_STATUS_COLORS.repaid }}>
                                 {formatCurrency(totalRepaid)}
                             </p>
                         </div>
@@ -137,9 +130,17 @@ export default function LoansPage() {
                         {loans.map((loan) => (
                             <Card
                                 key={loan.id}
+                                role="button"
+                                tabIndex={0}
                                 className={`cursor-pointer overflow-hidden transition-all hover:border-terracotta/50 hover:shadow-md ${loan.status === 'repaid' ? 'opacity-70 bg-secondary/20' : ''
                                     }`}
                                 onClick={() => handleEdit(loan)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        handleEdit(loan);
+                                    }
+                                }}
                             >
                                 <CardContent className="p-4">
                                     <div className="flex items-start justify-between gap-4">

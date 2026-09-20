@@ -17,6 +17,17 @@ import { RecurringTransaction, CreateRecurringTransaction } from '@/lib/supabase
 import { Plus, MoreHorizontal, Pencil, Trash2, CalendarDays, ZapOff, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { formatCurrency } from '@/lib/format';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function SubscriptionsPage() {
     const { categories } = useSpendingCategories();
@@ -24,15 +35,7 @@ export default function SubscriptionsPage() {
 
     const [formOpen, setFormOpen] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState<RecurringTransaction | null>(null);
-
-    const formatCurrency = (value: number) => {
-        return new Intl.NumberFormat('en-SG', {
-            style: 'currency',
-            currency: 'SGD',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        }).format(value);
-    };
+    const [deleteId, setDeleteId] = useState<string | null>(null);
 
     const handleCreate = async (data: CreateRecurringTransaction) => {
         await createRecurringTransaction(data);
@@ -46,13 +49,11 @@ export default function SubscriptionsPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (confirm('Are you sure you want to delete this subscription? No further transactions will be generated.')) {
-            try {
-                await deleteRecurringTransaction(id);
-                toast.success('Subscription deleted');
-            } catch {
-                toast.error('Failed to delete subscription');
-            }
+        try {
+            await deleteRecurringTransaction(id);
+            toast.success('Subscription deleted');
+        } catch {
+            toast.error('Failed to delete subscription');
         }
     };
 
@@ -110,8 +111,8 @@ export default function SubscriptionsPage() {
                         <CardTitle className="text-xs font-medium sm:text-sm">Monthly Burn Rate</CardTitle>
                     </CardHeader>
                     <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
-                        <div className="text-lg font-bold sm:text-2xl">{formatCurrency(totalMonthlyCost)}</div>
-                        <p className="text-[10px] text-muted-foreground sm:text-xs">
+                        <div className="text-lg font-bold sm:text-2xl">{formatCurrency(totalMonthlyCost, 'SGD', 0)}</div>
+                        <p className="text-[11px] text-muted-foreground sm:text-xs">
                             Projected active cost per month
                         </p>
                     </CardContent>
@@ -208,7 +209,7 @@ export default function SubscriptionsPage() {
                                                     {sub.is_active ? 'Pause Subscription' : 'Resume Subscription'}
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem
-                                                    onClick={() => handleDelete(sub.id)}
+                                                    onClick={() => setDeleteId(sub.id)}
                                                     className="text-destructive"
                                                 >
                                                     <Trash2 className="mr-2 h-4 w-4" />
@@ -223,8 +224,8 @@ export default function SubscriptionsPage() {
                                 <div className="space-y-4 pt-2 border-t">
                                     <div className="flex flex-wrap justify-between gap-x-2 text-xs sm:text-sm items-center">
                                         <div>
-                                            <span className="font-semibold text-base sm:text-lg">{formatCurrency(sub.amount)}</span>
-                                            <p className="text-muted-foreground text-[10px] sm:text-xs mt-1">
+                                            <span className="font-semibold text-base sm:text-lg">{formatCurrency(sub.amount, 'SGD', 0)}</span>
+                                            <p className="text-muted-foreground text-[11px] sm:text-xs mt-1">
                                                 {formatFrequency(sub)}
                                             </p>
                                         </div>
@@ -232,7 +233,7 @@ export default function SubscriptionsPage() {
                                             <Badge variant="outline" style={sub.category ? { borderColor: `${sub.category.color}40`, color: sub.category.color, backgroundColor: `${sub.category.color}10` } : {}}>
                                                 {sub.category ? sub.category.name : 'Uncategorized'}
                                             </Badge>
-                                            <p className="text-muted-foreground text-[10px] mt-2">
+                                            <p className="text-muted-foreground text-[11px] mt-2">
                                                 Last run: {sub.last_generated_date ? format(new Date(sub.last_generated_date), 'MMM d, yyyy') : 'Never'}
                                             </p>
                                         </div>
@@ -255,6 +256,29 @@ export default function SubscriptionsPage() {
                 transaction={editingTransaction}
                 categories={categories}
             />
+
+            <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Subscription</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete this subscription? No further transactions will be generated.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-destructive text-white hover:bg-destructive/90"
+                            onClick={() => {
+                                if (deleteId) handleDelete(deleteId);
+                                setDeleteId(null);
+                            }}
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

@@ -1,10 +1,13 @@
-const CACHE_NAME = 'finance-tracker-v3';
+const CACHE_NAME = 'finance-tracker-v4';
 const PRECACHE_URLS = [
     '/',
+    '/offline',
     '/manifest.json',
+    '/icon-192x192.png',
+    '/icon-512x512.png',
 ];
 
-// Install: precache core assets  
+// Install: precache core assets
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
@@ -37,6 +40,9 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
+    // Only handle same-origin requests
+    if (url.origin !== self.location.origin) return;
+
     event.respondWith(
         fetch(event.request)
             .then((response) => {
@@ -51,7 +57,14 @@ self.addEventListener('fetch', (event) => {
             })
             .catch(() => {
                 // Fallback to cache when offline
-                return caches.match(event.request);
+                return caches.match(event.request).then((cached) => {
+                    if (cached) return cached;
+                    // For page navigations, fall back to the offline page
+                    if (event.request.mode === 'navigate') {
+                        return caches.match('/offline');
+                    }
+                    return Response.error();
+                });
             })
     );
 });

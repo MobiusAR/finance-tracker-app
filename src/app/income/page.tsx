@@ -116,7 +116,7 @@ export default function IncomeAutomationPage() {
                 value={dob} 
                 onChange={(e) => setDob(e.target.value)} 
               />
-              <p className="text-[10px] text-muted-foreground">Required to calculate strict age-based CPF limits accurately on calculation day.</p>
+              <p className="text-[11px] text-muted-foreground">Required to calculate strict age-based CPF limits accurately on calculation day.</p>
             </div>
 
             <div className="space-y-2">
@@ -182,7 +182,7 @@ export default function IncomeAutomationPage() {
                   </div>
                 </div>
             </div>
-            <p className="text-[10px] text-muted-foreground">Income records are added on your Salary Pay Day. Your OA/SA/MA asset balances are injected on your CPF Deposit Day.</p>
+            <p className="text-[11px] text-muted-foreground">Income records are added on your Salary Pay Day. Your OA/SA/MA asset balances are injected on your CPF Deposit Day.</p>
           </CardContent>
         </Card>
 
@@ -247,7 +247,7 @@ export default function IncomeAutomationPage() {
                      <span className="text-xs text-muted-foreground shrink-0">of the month</span>
                   </div>
             </div>
-            <p className="text-[10px] text-muted-foreground">On the deduction day, the total loan and months left will decrement, and the payment amount will be withdrawn from your CPF OA limit.</p>
+            <p className="text-[11px] text-muted-foreground">On the deduction day, the total loan and months left will decrement, and the payment amount will be withdrawn from your CPF OA limit.</p>
 
           </CardContent>
         </Card>

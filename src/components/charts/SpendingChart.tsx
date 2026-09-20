@@ -2,19 +2,11 @@
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { SpendingSummary } from '@/lib/supabase/types';
+import { formatCurrency } from '@/lib/format';
 
 interface SpendingChartProps {
   data: SpendingSummary[];
 }
-
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('en-SG', {
-    style: 'currency',
-    currency: 'SGD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-};
 
 const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: SpendingSummary }> }) => {
   if (active && payload && payload.length) {
@@ -22,7 +14,7 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<
     return (
       <div className="rounded-lg border bg-background p-3 shadow-md">
         <p className="font-medium">{data.category}</p>
-        <p className="text-sm text-muted-foreground">{formatCurrency(data.total)}</p>
+        <p className="text-sm text-muted-foreground">{formatCurrency(data.total, 'SGD', 0)}</p>
         <p className="text-xs text-muted-foreground">{data.count} transactions</p>
       </div>
     );

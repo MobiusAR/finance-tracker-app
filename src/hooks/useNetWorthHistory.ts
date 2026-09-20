@@ -70,7 +70,10 @@ export function useNetWorthHistory() {
     let totalLiabilities = 0;
 
     (assets || []).forEach((asset) => {
-      const value = Number(asset.current_value);
+      const value =
+        asset.value_sgd != null
+          ? Number(asset.value_sgd)
+          : Number(asset.current_value);
       if (asset.category?.type === 'liability') {
         totalLiabilities += value;
       } else {
@@ -112,7 +115,10 @@ export function useNetWorthHistory() {
       const assetSnapshots = (assets || []).map((asset) => ({
         history_id: historyEntry.id,
         asset_id: asset.id,
-        value: Number(asset.current_value),
+        value:
+          asset.value_sgd != null
+            ? Number(asset.value_sgd)
+            : Number(asset.current_value),
       }));
 
       if (assetSnapshots.length > 0) {

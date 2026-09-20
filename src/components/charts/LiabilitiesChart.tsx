@@ -2,20 +2,13 @@
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { NetWorthBreakdown } from '@/lib/supabase/types';
+import { formatCurrency } from '@/lib/format';
+import { LIABILITY_COLORS } from '@/lib/colors';
 
 interface LiabilitiesChartProps {
   data: NetWorthBreakdown[];
   onCategoryClick?: (category: string) => void;
 }
-
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('en-SG', {
-    style: 'currency',
-    currency: 'SGD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-};
 
 const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: NetWorthBreakdown }> }) => {
   if (active && payload && payload.length) {
@@ -23,7 +16,7 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<
     return (
       <div className="rounded-lg border bg-background p-3 shadow-md">
         <p className="font-medium">{data.category}</p>
-        <p className="text-sm text-muted-foreground">{formatCurrency(data.value)}</p>
+        <p className="text-sm text-muted-foreground">{formatCurrency(data.value, 'SGD', 0)}</p>
       </div>
     );
   }
@@ -43,7 +36,7 @@ export function LiabilitiesChart({ data, onCategoryClick }: LiabilitiesChartProp
   }
 
   // Use different shades of red for liabilities
-  const COLORS = ['#ef4444', '#dc2626', '#b91c1c', '#991b1b', '#7f1d1d'];
+  const COLORS = LIABILITY_COLORS;
 
   return (
     <ResponsiveContainer width="100%" height="100%">

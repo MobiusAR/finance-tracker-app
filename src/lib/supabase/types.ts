@@ -31,6 +31,8 @@ export interface Asset {
   category_id: string;
   current_value: number;
   currency: string;
+  value_sgd: number | null;
+  fx_rate: number | null;
   notes: string | null;
   ticker_symbol: string | null;
   shares: number | null;

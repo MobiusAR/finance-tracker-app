@@ -7,7 +7,10 @@ import { MobileHeader } from './MobileHeader';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/auth');
+  const isAuthPage =
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/auth') ||
+    pathname.startsWith('/offline');
 
   if (isAuthPage) {
     return <>{children}</>;

@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/generate-recurring",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/snapshot-net-worth",
+      "schedule": "30 15 * * *"
     }
   ]
 }

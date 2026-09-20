@@ -103,7 +103,9 @@ export async function GET(request: Request) {
                     .from('assets')
                     .update({
                         current_value: roundedSgdValue,
-                        currency: 'SGD' // Auto-tracked assets mathematically resolve into SGD 
+                        currency: 'SGD', // Auto-tracked assets mathematically resolve into SGD
+                        value_sgd: roundedSgdValue,
+                        fx_rate: exchangeRateToSgd,
                     })
                     .eq('id', asset.id)
                     .then(({ data, error }) => {
@@ -116,9 +118,65 @@ export async function GET(request: Request) {
         // 7. Await all DB updates in parallel
         await Promise.all(updatePromises);
 
+        // 7b. Resolve SGD values for manual (non-auto-tracked) assets
+        const { data: manualAssets, error: manualFetchError } = await supabase
+            .from('assets')
+            .select('id, current_value, currency')
+            .eq('is_auto_tracked', false);
+
+        if (manualFetchError) throw manualFetchError;
+
+        const manualCurrencies = new Set<string>();
+        (manualAssets || []).forEach((a) => {
+            if (a.currency && a.currency !== 'SGD') {
+                manualCurrencies.add(a.currency);
+            }
+        });
+
+        // Fetch any FX rates not already resolved above
+        const missingPairs = Array.from(manualCurrencies)
+            .map((c) => `${c}SGD=X`.toUpperCase())
+            .filter((pair) => !fxMap[pair]);
+        if (missingPairs.length > 0) {
+            const extraFxQuotes = await yahooFinance.quote(missingPairs);
+            extraFxQuotes.forEach((q) => {
+                fxMap[q.symbol] = q.regularMarketPrice || 1;
+            });
+        }
+
+        const manualUpdatePromises: Promise<unknown>[] = [];
+        let convertedCount = 0;
+
+        (manualAssets || []).forEach((a) => {
+            const currency = a.currency || 'SGD';
+            let valueSgd = Number(a.current_value);
+            let fxRate = 1;
+
+            if (currency !== 'SGD') {
+                const pair = `${currency}SGD=X`.toUpperCase();
+                fxRate = fxMap[pair] || 1;
+                valueSgd = Math.round(Number(a.current_value) * fxRate * 100) / 100;
+                convertedCount++;
+            }
+
+            manualUpdatePromises.push(
+                supabase
+                    .from('assets')
+                    .update({ value_sgd: valueSgd, fx_rate: fxRate })
+                    .eq('id', a.id)
+                    .then(({ error }) => {
+                        if (error) throw error;
+                        return null;
+                    }) as unknown as Promise<unknown>
+            );
+        });
+
+        await Promise.all(manualUpdatePromises);
+
         return NextResponse.json({
             success: true,
             message: `Successfully synchronized ${updatePromises.length} assets`,
+            converted_manual_assets: convertedCount,
             debug_asset_calculations: assets.map((asset) => {
                 const quote = quoteMap[asset.ticker_symbol];
                 const latestPrice = quote?.regularMarketPrice || 0;

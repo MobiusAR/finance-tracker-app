@@ -2,22 +2,15 @@
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { SourceBreakdown } from '@/lib/supabase/types';
+import { formatCurrency } from '@/lib/format';
+import { SOURCE_COLORS } from '@/lib/colors';
 
 interface SourceBreakdownChartProps {
   data: SourceBreakdown[];
   category: string;
 }
 
-const COLORS = ['#22c55e', '#3b82f6', '#f97316', '#ec4899', '#8b5cf6', '#06b6d4', '#eab308'];
-
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('en-SG', {
-    style: 'currency',
-    currency: 'SGD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-};
+const COLORS = SOURCE_COLORS;
 
 const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: SourceBreakdown }> }) => {
   if (active && payload && payload.length) {
@@ -25,7 +18,7 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<
     return (
       <div className="rounded-lg border bg-background p-3 shadow-md">
         <p className="font-medium">{data.source}</p>
-        <p className="text-sm text-muted-foreground">{formatCurrency(data.value)}</p>
+        <p className="text-sm text-muted-foreground">{formatCurrency(data.value, 'SGD', 0)}</p>
         <p className="text-xs text-muted-foreground">{data.assets.length} asset(s)</p>
       </div>
     );
