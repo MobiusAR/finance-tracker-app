@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +18,7 @@ import { Plus, MoreHorizontal, Pencil, Trash2, AlertTriangle, CheckCircle, Piggy
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { formatCurrency as formatCurrencySgd } from '@/lib/format';
+import { TRANSACTIONS_CHANGED_EVENT } from '@/lib/events';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +37,15 @@ export default function CategoriesPage() {
   const { budgetStatus, loading, refetch } = useBudgetStatus();
   const { totalSurplus, monthlyBreakdown, loading: surplusLoading, refetch: refetchSurplus } = useBudgetSurplus();
   const { config, updateConfig, loading: configLoading } = useSurplusConfig();
+
+  useEffect(() => {
+    const onChanged = () => {
+      refetch();
+      refetchSurplus();
+    };
+    window.addEventListener(TRANSACTIONS_CHANGED_EVENT, onChanged);
+    return () => window.removeEventListener(TRANSACTIONS_CHANGED_EVENT, onChanged);
+  }, [refetch, refetchSurplus]);
 
   const [formOpen, setFormOpen] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);

@@ -50,6 +50,7 @@ export function AssetForm({
   const [isAutoTracked, setIsAutoTracked] = useState(false);
   const [tickerSymbol, setTickerSymbol] = useState('');
   const [shares, setShares] = useState('');
+  const [costBasis, setCostBasis] = useState('');
   const [loading, setLoading] = useState(false);
 
   const isEditing = !!asset;
@@ -70,6 +71,7 @@ export function AssetForm({
       setIsAutoTracked(asset.is_auto_tracked || false);
       setTickerSymbol(asset.ticker_symbol || '');
       setShares(asset.shares?.toString() || '');
+      setCostBasis(asset.cost_basis?.toString() || '');
     } else {
       resetForm();
     }
@@ -85,6 +87,7 @@ export function AssetForm({
     setIsAutoTracked(false);
     setTickerSymbol('');
     setShares('');
+    setCostBasis('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -117,6 +120,7 @@ export function AssetForm({
         is_auto_tracked: isAutoTracked,
         ticker_symbol: isAutoTracked ? tickerSymbol.toUpperCase() : undefined,
         shares: isAutoTracked ? parseFloat(shares) : undefined,
+        cost_basis: costBasis ? parseFloat(costBasis) : undefined,
       });
       toast.success(isEditing ? 'Asset updated' : 'Asset created');
       onOpenChange(false);
@@ -275,6 +279,21 @@ export function AssetForm({
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Optional notes"
               />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="costBasis">Cost Basis (SGD, optional)</Label>
+              <Input
+                id="costBasis"
+                type="number"
+                step="0.01"
+                value={costBasis}
+                onChange={(e) => setCostBasis(e.target.value)}
+                placeholder="Amount you paid"
+              />
+              <p className="text-xs text-muted-foreground">
+                What you paid in SGD, used to show gain/loss.
+              </p>
             </div>
           </div>
           <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:gap-0">

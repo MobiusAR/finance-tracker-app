@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,13 +12,14 @@ import { SpendingChart } from '@/components/charts/SpendingChart';
 import { SourceBreakdownChart } from '@/components/charts/SourceBreakdownChart';
 import { NetWorthTrendChart } from '@/components/charts/NetWorthTrendChart';
 import { useNetWorthBreakdown } from '@/hooks/useAssets';
-import { useSpendingSummary } from '@/hooks/useTransactions';
+import { useSpendingSummary, useBudgetStatus } from '@/hooks/useTransactions';
 import { useNetWorthHistory } from '@/hooks/useNetWorthHistory';
-import { TrendingUp, TrendingDown, Wallet, CreditCard, Camera, History, PieChart, Receipt, Shield } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, CreditCard, Camera, History, PieChart, Receipt, Shield, AlertTriangle, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { formatCurrency } from '@/lib/format';
 import { ASSET_TYPE_COLORS } from '@/lib/colors';
+import { TRANSACTIONS_CHANGED_EVENT } from '@/lib/events';
 
 export default function Dashboard() {
   const {
@@ -28,14 +29,25 @@ export default function Dashboard() {
     totalAssets,
     totalCpf,
     totalLiabilities,
+    totalGain,
     loading: assetsLoading,
   } = useNetWorthBreakdown();
 
-  const { summary, totalSpending, loading: spendingLoading } = useSpendingSummary(1);
+  const { summary, totalSpending, loading: spendingLoading, refetch: refetchSpending } = useSpendingSummary(1);
+  const { budgetStatus, loading: budgetLoading, refetch: refetchBudget } = useBudgetStatus();
   const { history, loading: historyLoading, takeSnapshot, refetch: refetchHistory } = useNetWorthHistory();
   const [selectedAssetCategory, setSelectedAssetCategory] = useState<string | null>(null);
   const [selectedLiabilityCategory, setSelectedLiabilityCategory] = useState<string | null>(null);
   const [snapshotLoading, setSnapshotLoading] = useState(false);
+
+  useEffect(() => {
+    const onChanged = () => {
+      refetchSpending();
+      refetchBudget();
+    };
+    window.addEventListener(TRANSACTIONS_CHANGED_EVENT, onChanged);
+    return () => window.removeEventListener(TRANSACTIONS_CHANGED_EVENT, onChanged);
+  }, [refetchSpending, refetchBudget]);
 
   const handleTakeSnapshot = async () => {
     try {
@@ -58,6 +70,12 @@ export default function Dashboard() {
   const netWorthChange = lastSnapshot && previousSnapshot
     ? lastSnapshot.net_worth - previousSnapshot.net_worth
     : null;
+
+  const totalBudget = budgetStatus
+    .filter((s) => s.budget !== null)
+    .reduce((sum, s) => sum + (s.budget || 0), 0);
+  const totalBudgetSpent = budgetStatus.reduce((sum, s) => sum + s.spent, 0);
+  const overBudgetCategories = budgetStatus.filter((s) => s.isOverBudget);
 
   return (
     <div>
@@ -105,6 +123,11 @@ export default function Dashboard() {
             <p className="hidden text-xs text-muted-foreground md:block">
               Investments + Cash
             </p>
+            {totalGain !== 0 && (
+              <p className={`text-[11px] md:text-xs ${totalGain >= 0 ? 'text-sage' : 'text-destructive'}`}>
+                {totalGain >= 0 ? '+' : ''}{formatCurrency(totalGain, 'SGD', 0)} total return
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -162,6 +185,66 @@ export default function Dashboard() {
             <p className="hidden text-xs text-muted-foreground md:block">
               This month
             </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Budget Overview */}
+      <div className="mb-4 px-2 md:px-0 md:mb-6">
+        <Card>
+          <CardHeader className="p-3 pb-1 sm:p-6 sm:pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm sm:text-base">Budget Overview</CardTitle>
+              {budgetLoading ? null : overBudgetCategories.length > 0 ? (
+                <span className="flex items-center gap-1 text-xs font-medium text-destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  {overBudgetCategories.length} over budget
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 text-xs font-medium text-sage">
+                  <CheckCircle className="h-4 w-4" />
+                  On track
+                </span>
+              )}
+            </div>
+            <CardDescription className="text-xs sm:text-sm">This month&apos;s spending vs budget</CardDescription>
+          </CardHeader>
+          <CardContent className="p-3 pt-2 sm:p-6 sm:pt-2">
+            {budgetLoading ? (
+              <Skeleton className="h-16 w-full rounded-lg" />
+            ) : totalBudget === 0 ? (
+              <p className="text-sm text-muted-foreground">No budgets set. Add budgets in Categories.</p>
+            ) : (
+              <div className="space-y-3">
+                <div>
+                  <div className="flex justify-between text-xs sm:text-sm">
+                    <span className="font-medium">{formatCurrency(totalBudgetSpent, 'SGD', 0)}</span>
+                    <span className="text-muted-foreground">of {formatCurrency(totalBudget, 'SGD', 0)}</span>
+                  </div>
+                  <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-secondary">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${totalBudgetSpent > totalBudget ? 'bg-destructive' : 'bg-sage'}`}
+                      style={{ width: `${Math.min((totalBudgetSpent / totalBudget) * 100, 100)}%` }}
+                    />
+                  </div>
+                </div>
+                {overBudgetCategories.length > 0 && (
+                  <div className="space-y-1.5">
+                    {overBudgetCategories.slice(0, 3).map(({ category, spent, budget, percentUsed }) => (
+                      <div key={category.id} className="flex items-center justify-between gap-2 text-xs">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: category.color }} />
+                          <span className="truncate">{category.name}</span>
+                        </div>
+                        <span className="shrink-0 text-destructive font-medium">
+                          {formatCurrency(Math.abs((budget || 0) - spent), 'SGD', 0)} over · {Math.round(percentUsed || 0)}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

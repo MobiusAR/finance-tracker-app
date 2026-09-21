@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
 import { MobileHeader } from './MobileHeader';
+import { QuickAddExpense } from '@/components/forms/QuickAddExpense';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -35,6 +36,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Mobile Bottom Nav - hidden on desktop */}
       <MobileNav />
+
+      {/* Global quick-add expense FAB */}
+      <QuickAddExpense />
     </>
   );
 }

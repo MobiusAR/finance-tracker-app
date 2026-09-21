@@ -235,6 +235,7 @@ export function useNetWorthBreakdown() {
   const [totalAssets, setTotalAssets] = useState(0);
   const [totalCpf, setTotalCpf] = useState(0);
   const [totalLiabilities, setTotalLiabilities] = useState(0);
+  const [totalGain, setTotalGain] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -328,6 +329,19 @@ export function useNetWorthBreakdown() {
       setTotalLiabilities(liabilitiesTotal);
       // Net worth still includes CPF
       setTotalNetWorth(assetsTotal + cpfTotal - liabilitiesTotal);
+
+      // Total unrealized gain/loss across assets with a cost basis
+      let gainTotal = 0;
+      (assets || []).forEach((asset) => {
+        if (asset.cost_basis != null) {
+          const sgd =
+            asset.value_sgd != null
+              ? Number(asset.value_sgd)
+              : Number(asset.current_value);
+          gainTotal += sgd - Number(asset.cost_basis);
+        }
+      });
+      setTotalGain(gainTotal);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch breakdown');
     } finally {
@@ -346,6 +360,7 @@ export function useNetWorthBreakdown() {
     totalAssets,
     totalCpf,
     totalLiabilities,
+    totalGain,
     loading,
     error,
     refetch: fetchBreakdown,

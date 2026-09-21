@@ -31,6 +31,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { formatCurrency } from '@/lib/format';
 import { assetTypeColor } from '@/lib/colors';
+import { notifyAssetsChanged } from '@/lib/events';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,12 +61,13 @@ export default function AssetsPage() {
     type: 'asset' | 'source' | 'category';
     id: string;
     message: string;
+    asset?: Asset;
   } | null>(null);
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
-    const { type, id } = deleteTarget;
-    if (type === 'asset') await handleDeleteAsset(id);
+    const { type, id, asset } = deleteTarget;
+    if (type === 'asset' && asset) await handleDeleteAsset(asset);
     else if (type === 'source') await handleDeleteSource(id);
     else if (type === 'category') await handleDeleteCategory(id);
     setDeleteTarget(null);
@@ -118,10 +120,34 @@ export default function AssetsPage() {
     }
   };
 
-  const handleDeleteAsset = async (id: string) => {
+  const handleDeleteAsset = async (asset: Asset) => {
     try {
-      await deleteAsset(id);
-      toast.success('Asset deleted');
+      await deleteAsset(asset.id);
+      notifyAssetsChanged();
+      toast.success('Asset deleted', {
+        action: {
+          label: 'Undo',
+          onClick: async () => {
+            try {
+              await createAsset({
+                name: asset.name,
+                source_id: asset.source_id,
+                category_id: asset.category_id,
+                current_value: asset.current_value,
+                currency: asset.currency,
+                notes: asset.notes || undefined,
+                is_auto_tracked: asset.is_auto_tracked,
+                ticker_symbol: asset.ticker_symbol || undefined,
+                shares: asset.shares ?? undefined,
+              });
+              notifyAssetsChanged();
+              toast.success('Asset restored');
+            } catch {
+              toast.error('Failed to undo');
+            }
+          },
+        },
+      });
     } catch {
       toast.error('Failed to delete');
     }
@@ -191,6 +217,17 @@ export default function AssetsPage() {
     return sum + value;
   }, 0);
 
+  const sgdValueOf = (asset: Asset) =>
+    asset.value_sgd != null ? Number(asset.value_sgd) : Number(asset.current_value);
+  const gainOf = (asset: Asset) =>
+    asset.cost_basis != null ? sgdValueOf(asset) - Number(asset.cost_basis) : null;
+
+  const totalGain = filteredAssets.reduce((sum, asset) => {
+    const g = gainOf(asset);
+    return g != null ? sum + g : sum;
+  }, 0);
+  const gainCount = filteredAssets.filter((a) => a.cost_basis != null).length;
+
   return (
     <div>
       <Header title="Assets" description="Manage your assets and liabilities" />
@@ -240,6 +277,14 @@ export default function AssetsPage() {
                   <p className="text-xs text-muted-foreground">assets</p>
                 </div>
               </div>
+              {gainCount > 0 && (
+                <div className="mt-3 flex items-center justify-between border-t pt-3 text-sm">
+                  <span className="text-muted-foreground">Gain / Loss ({gainCount} tracked)</span>
+                  <span className={`font-semibold ${totalGain >= 0 ? 'text-sage' : 'text-destructive'}`}>
+                    {totalGain >= 0 ? '+' : ''}{formatCurrency(totalGain, 'SGD', 0)}
+                  </span>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -313,6 +358,11 @@ export default function AssetsPage() {
                                   {asset.currency !== 'SGD' && asset.value_sgd != null && (
                                     <div className="text-xs text-muted-foreground">≈ {formatCurrency(asset.value_sgd, 'SGD', 0)}</div>
                                   )}
+                                  {gainOf(asset) != null && (
+                                    <div className={`text-xs ${gainOf(asset)! >= 0 ? 'text-sage' : 'text-destructive'}`}>
+                                      {gainOf(asset)! >= 0 ? '+' : ''}{formatCurrency(gainOf(asset)!, 'SGD', 0)}
+                                    </div>
+                                  )}
                                 </div>
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
@@ -324,7 +374,7 @@ export default function AssetsPage() {
                                     <DropdownMenuItem onClick={() => { setEditingAsset(asset); setAssetFormOpen(true); }}>
                                       <Pencil className="mr-2 h-4 w-4" />Edit
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => setDeleteTarget({ type: 'asset', id: asset.id, message: 'Delete this asset?' })} className="text-destructive">
+                                    <DropdownMenuItem onClick={() => setDeleteTarget({ type: 'asset', id: asset.id, message: 'Delete this asset?', asset })} className="text-destructive">
                                       <Trash2 className="mr-2 h-4 w-4" />Delete
                                     </DropdownMenuItem>
                                   </DropdownMenuContent>
@@ -363,6 +413,11 @@ export default function AssetsPage() {
                                     {asset.currency !== 'SGD' && asset.value_sgd != null && (
                                       <div className="text-xs text-muted-foreground">≈ {formatCurrency(asset.value_sgd, 'SGD', 0)}</div>
                                     )}
+                                    {gainOf(asset) != null && (
+                                      <div className={`text-xs ${gainOf(asset)! >= 0 ? 'text-sage' : 'text-destructive'}`}>
+                                        {gainOf(asset)! >= 0 ? '+' : ''}{formatCurrency(gainOf(asset)!, 'SGD', 0)}
+                                      </div>
+                                    )}
                                   </TableCell>
                                   <TableCell className="text-muted-foreground">{format(new Date(asset.updated_at), 'MMM d')}</TableCell>
                                   <TableCell>
@@ -374,7 +429,7 @@ export default function AssetsPage() {
                                         <DropdownMenuItem onClick={() => { setEditingAsset(asset); setAssetFormOpen(true); }}>
                                           <Pencil className="mr-2 h-4 w-4" />Edit
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => setDeleteTarget({ type: 'asset', id: asset.id, message: 'Delete this asset?' })} className="text-destructive">
+                                        <DropdownMenuItem onClick={() => setDeleteTarget({ type: 'asset', id: asset.id, message: 'Delete this asset?', asset })} className="text-destructive">
                                           <Trash2 className="mr-2 h-4 w-4" />Delete
                                         </DropdownMenuItem>
                                       </DropdownMenuContent>

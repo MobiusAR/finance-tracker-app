@@ -33,6 +33,7 @@ export interface Asset {
   currency: string;
   value_sgd: number | null;
   fx_rate: number | null;
+  cost_basis: number | null;
   notes: string | null;
   ticker_symbol: string | null;
   shares: number | null;
@@ -161,6 +162,7 @@ export interface CreateAsset {
   notes?: string;
   ticker_symbol?: string;
   shares?: number;
+  cost_basis?: number;
   is_auto_tracked?: boolean;
 }
 
@@ -173,6 +175,7 @@ export interface UpdateAsset {
   notes?: string;
   ticker_symbol?: string;
   shares?: number;
+  cost_basis?: number;
   is_auto_tracked?: boolean;
 }
 

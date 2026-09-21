@@ -16,6 +16,18 @@ import {
 } from '@/lib/supabase/types';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 
+export async function insertTransaction(data: CreateTransaction): Promise<Transaction> {
+  const supabase = createClient();
+  const { data: inserted, error } = await supabase
+    .from('transactions')
+    .insert(data)
+    .select('*, category:spending_categories(*)')
+    .single();
+
+  if (error) throw error;
+  return inserted as Transaction;
+}
+
 export function useSpendingCategories() {
   const [categories, setCategories] = useState<SpendingCategory[]>([]);
   const [loading, setLoading] = useState(true);

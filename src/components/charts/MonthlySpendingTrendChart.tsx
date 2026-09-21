@@ -1,12 +1,13 @@
 'use client';
 
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from 'recharts';
 import { MonthlySpendingTrend } from '@/hooks/useTransactions';
 import { formatCurrency } from '@/lib/format';
 import { TERRACOTTA } from '@/lib/colors';
 
 interface MonthlySpendingTrendChartProps {
   data: MonthlySpendingTrend[];
+  budget?: number;
 }
 
 const CustomTooltip = ({ active, payload }: {
@@ -26,7 +27,7 @@ const CustomTooltip = ({ active, payload }: {
   return null;
 };
 
-export function MonthlySpendingTrendChart({ data }: MonthlySpendingTrendChartProps) {
+export function MonthlySpendingTrendChart({ data, budget }: MonthlySpendingTrendChartProps) {
   if (data.length === 0) {
     return (
       <div className="flex h-[250px] items-center justify-center text-muted-foreground">
@@ -48,6 +49,14 @@ export function MonthlySpendingTrendChart({ data }: MonthlySpendingTrendChartPro
         <XAxis dataKey="label" tick={{ fontSize: 12 }} className="text-muted-foreground" />
         <YAxis tickFormatter={formatYAxis} tick={{ fontSize: 12 }} className="text-muted-foreground" />
         <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.05)' }} />
+        {budget && budget > 0 && (
+          <ReferenceLine
+            y={budget}
+            stroke="#778DA9"
+            strokeDasharray="4 4"
+            label={{ value: 'Budget', position: 'insideTopRight', fontSize: 11, fill: '#778DA9' }}
+          />
+        )}
         <Bar dataKey="total" fill={TERRACOTTA} radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>

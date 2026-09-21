@@ -30,6 +30,7 @@ import { Plus, MoreHorizontal, Pencil, Trash2, ChevronLeft, ChevronRight, Chevro
 import { toast } from 'sonner';
 import { format, addMonths, subMonths } from 'date-fns';
 import { formatCurrency } from '@/lib/format';
+import { TRANSACTIONS_CHANGED_EVENT, notifyTransactionsChanged } from '@/lib/events';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,14 +44,24 @@ import {
 
 export default function SpendingPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const { transactions, loading, createTransaction, updateTransaction, deleteTransaction } =
+  const { transactions, loading, createTransaction, updateTransaction, deleteTransaction, refetch: refetchTransactions } =
     useTransactions(currentMonth);
   const { categories } = useSpendingCategories();
-  const { summary } = useSpendingSummary(1, currentMonth);
-  const { trend, loading: trendLoading } = useMonthlySpendingTrend(12);
+  const { summary, refetch: refetchSummary } = useSpendingSummary(1, currentMonth);
+  const { trend, loading: trendLoading, refetch: refetchTrend } = useMonthlySpendingTrend(12);
+
+  useEffect(() => {
+    const onChanged = () => {
+      refetchTransactions();
+      refetchSummary();
+      refetchTrend();
+    };
+    window.addEventListener(TRANSACTIONS_CHANGED_EVENT, onChanged);
+    return () => window.removeEventListener(TRANSACTIONS_CHANGED_EVENT, onChanged);
+  }, [refetchTransactions, refetchSummary, refetchTrend]);
 
   const [formOpen, setFormOpen] = useState(false);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [openDates, setOpenDates] = useState<Set<string>>(new Set());
   const prevMonthRef = useRef<string>('');
@@ -138,11 +149,30 @@ export default function SpendingPage() {
     }
   };
 
-  const handleDeleteTransaction = async (id: string) => {
+  const handleDeleteTransaction = async (transaction: Transaction) => {
     try {
-      await deleteTransaction(id);
-      toast.success('Transaction deleted');
-    } catch (error) {
+      await deleteTransaction(transaction.id);
+      notifyTransactionsChanged();
+      toast.success('Transaction deleted', {
+        action: {
+          label: 'Undo',
+          onClick: async () => {
+            try {
+              await createTransaction({
+                amount: transaction.amount,
+                category_id: transaction.category_id || undefined,
+                description: transaction.description || undefined,
+                transaction_date: transaction.transaction_date.slice(0, 10),
+              });
+              notifyTransactionsChanged();
+              toast.success('Transaction restored');
+            } catch {
+              toast.error('Failed to undo');
+            }
+          },
+        },
+      });
+    } catch {
       toast.error('Failed to delete transaction');
     }
   };
@@ -286,7 +316,10 @@ export default function SpendingPage() {
             {trendLoading ? (
               <Skeleton className="h-[250px] w-full rounded-xl" />
             ) : (
-              <MonthlySpendingTrendChart data={trend} />
+              <MonthlySpendingTrendChart
+                data={trend}
+                budget={categories.reduce((sum, c) => sum + (Number(c.budget_amount) || 0), 0)}
+              />
             )}
           </CardContent>
         </Card>
@@ -521,7 +554,7 @@ export default function SpendingPage() {
                                         <DropdownMenuItem onClick={() => handleEditTransaction(transaction)}>
                                           <Pencil className="mr-2 h-4 w-4" />Edit
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => setDeleteId(transaction.id)} className="text-destructive">
+                                        <DropdownMenuItem onClick={() => setDeleteTarget(transaction)} className="text-destructive">
                                           <Trash2 className="mr-2 h-4 w-4" />Delete
                                         </DropdownMenuItem>
                                       </DropdownMenuContent>
@@ -574,7 +607,7 @@ export default function SpendingPage() {
                                           Edit
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
-                                          onClick={() => setDeleteId(transaction.id)}
+                                          onClick={() => setDeleteTarget(transaction)}
                                           className="text-destructive"
                                         >
                                           <Trash2 className="mr-2 h-4 w-4" />
@@ -609,12 +642,12 @@ export default function SpendingPage() {
         transaction={editingTransaction}
       />
 
-      <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
+      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this transaction? This action cannot be undone.
+              Are you sure you want to delete this transaction? You can undo this from the toast.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -622,8 +655,8 @@ export default function SpendingPage() {
             <AlertDialogAction
               className="bg-destructive text-white hover:bg-destructive/90"
               onClick={() => {
-                if (deleteId) handleDeleteTransaction(deleteId);
-                setDeleteId(null);
+                if (deleteTarget) handleDeleteTransaction(deleteTarget);
+                setDeleteTarget(null);
               }}
             >
               Delete
