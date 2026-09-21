@@ -19,13 +19,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Transaction, SpendingCategory, CreateTransaction, UpdateTransaction } from '@/lib/supabase/types';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface TransactionFormProps {
   open: boolean;
@@ -45,7 +41,7 @@ export function TransactionForm({
   const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [description, setDescription] = useState('');
-  const [date, setDate] = useState<Date>(new Date());
+  const [date, setDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [loading, setLoading] = useState(false);
 
   const isEditing = !!transaction;
@@ -55,7 +51,7 @@ export function TransactionForm({
       setAmount(transaction.amount.toString());
       setCategoryId(transaction.category_id || '');
       setDescription(transaction.description || '');
-      setDate(new Date(transaction.transaction_date));
+      setDate(transaction.transaction_date.slice(0, 10));
     } else {
       resetForm();
     }
@@ -65,7 +61,7 @@ export function TransactionForm({
     setAmount('');
     setCategoryId('');
     setDescription('');
-    setDate(new Date());
+    setDate(format(new Date(), 'yyyy-MM-dd'));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -82,7 +78,7 @@ export function TransactionForm({
         amount: parseFloat(amount),
         category_id: categoryId || undefined,
         description: description || undefined,
-        transaction_date: format(date, 'yyyy-MM-dd'),
+        transaction_date: date,
       });
       toast.success(isEditing ? 'Transaction updated' : 'Transaction added');
       onOpenChange(false);
@@ -142,29 +138,13 @@ export function TransactionForm({
             </div>
 
             <div className="grid gap-2">
-              <Label>Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      'w-full justify-start text-left font-normal',
-                      !date && 'text-muted-foreground'
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, 'PPP') : 'Pick a date'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={(d) => d && setDate(d)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <Label htmlFor="date">Date</Label>
+              <Input
+                id="date"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
             </div>
 
             <div className="grid gap-2">
