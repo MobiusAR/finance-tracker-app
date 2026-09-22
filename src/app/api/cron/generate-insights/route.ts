@@ -109,7 +109,7 @@ export async function GET(request: Request) {
                 model,
                 messages: [{ role: 'user', content: prompt }],
                 temperature: 0.5,
-                max_tokens: 400,
+                max_tokens: 2000,
             }),
         });
 
@@ -126,8 +126,15 @@ export async function GET(request: Request) {
         }
 
         const json = await res.json();
-        const analysis = json?.choices?.[0]?.message?.content?.trim();
-        if (!analysis) throw new Error('LLM returned no content');
+        const choice = json?.choices?.[0];
+        const analysis = typeof choice?.message?.content === 'string'
+            ? choice.message.content.trim()
+            : '';
+        if (!analysis) {
+            throw new Error(
+                `LLM returned no content (finish_reason: ${choice?.finish_reason ?? 'n/a'})`
+            );
+        }
 
         const { error: upsertError } = await supabase
             .from('insights')
