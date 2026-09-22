@@ -374,9 +374,8 @@ export function useBudgetSurplus() {
         const startDate = currentMonthStr;
         const endDate = format(endOfMonth(today), 'yyyy-MM-dd');
 
-        const [configResult, incomeResult, categoriesResult, transactionsResult] = await Promise.all([
+        const [configResult, categoriesResult, transactionsResult] = await Promise.all([
           supabase.from('surplus_config').select('*').eq('is_singleton', true).single(),
-          supabase.from('income_records').select('net_pay').eq('month', currentMonthStr).single(),
           supabase.from('spending_categories').select('budget_amount'),
           supabase
             .from('transactions')
@@ -386,9 +385,7 @@ export function useBudgetSurplus() {
         ]);
 
         const config = configResult.data || { monthly_income: 0, monthly_savings_target: 0 };
-        const activeIncome = incomeResult.data && incomeResult.data.net_pay
-          ? Number(incomeResult.data.net_pay)
-          : Number(config.monthly_income);
+        const activeIncome = Number(config.monthly_income);
 
         const discretionaryAllowance = activeIncome - Number(config.monthly_savings_target);
 

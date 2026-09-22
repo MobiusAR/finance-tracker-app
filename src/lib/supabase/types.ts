@@ -233,37 +233,6 @@ export interface UpdatePersonalLoan {
   reason?: string | null;
 }
 
-export interface UserSettings {
-  id: string;
-  date_of_birth: string | null;
-  race: 'Chinese' | 'Indian' | 'Malay' | 'Others' | 'None' | null;
-  monthly_mortgage: number;
-  basic_salary: number;
-  basic_bonus: number;
-  salary_pay_day: number;
-  cpf_pay_day: number;
-  mortgage_pay_day: number;
-  home_loan_asset_id: string | null;
-  last_salary_processed_date: string | null;
-  last_cpf_processed_date: string | null;
-  last_mortgage_processed_date: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface IncomeRecord {
-  id: string;
-  month: string;
-  gross_pay: number;
-  bonus: number;
-  employee_cpf: number;
-  employer_cpf: number;
-  shg_deduction: number;
-  net_pay: number;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface Insight {
   id: string;
   week_start: string;
@@ -356,16 +325,6 @@ export interface Database {
         Row: PersonalLoan;
         Insert: CreatePersonalLoan & { id?: string };
         Update: UpdatePersonalLoan;
-      };
-      user_settings: {
-        Row: UserSettings;
-        Insert: Omit<UserSettings, 'id' | 'created_at' | 'updated_at'> & { id?: string };
-        Update: Partial<Omit<UserSettings, 'id' | 'created_at' | 'updated_at'>>;
-      };
-      income_records: {
-        Row: IncomeRecord;
-        Insert: Omit<IncomeRecord, 'id' | 'created_at' | 'updated_at'> & { id?: string };
-        Update: Partial<Omit<IncomeRecord, 'id' | 'created_at' | 'updated_at'>>;
       };
       insights: {
         Row: Insight;
