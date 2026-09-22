@@ -93,9 +93,18 @@ export async function GET(request: Request) {
             dataLines,
         ].join('\n');
 
+        // OpenCode Go requires a stable session id and a self-identifying user agent.
+        const weekStart = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+        const sessionId = `finance-tracker-${weekStart}`;
+
         const res = await fetch(apiUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${apiKey}`,
+                'x-opencode-session': sessionId,
+                'User-Agent': 'finance-tracker/1.0',
+            },
             body: JSON.stringify({
                 model,
                 messages: [{ role: 'user', content: prompt }],
@@ -106,14 +115,19 @@ export async function GET(request: Request) {
 
         if (!res.ok) {
             const errText = await res.text();
-            throw new Error(`LLM request failed (${res.status}): ${errText.slice(0, 200)}`);
+            let detail = errText;
+            try {
+                const parsed = JSON.parse(errText);
+                detail = parsed?.error?.message || parsed?.error?.code || errText;
+            } catch {
+                // response wasn't JSON; keep raw text
+            }
+            throw new Error(`LLM request failed (${res.status}): ${detail}`);
         }
 
         const json = await res.json();
         const analysis = json?.choices?.[0]?.message?.content?.trim();
         if (!analysis) throw new Error('LLM returned no content');
-
-        const weekStart = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
 
         const { error: upsertError } = await supabase
             .from('insights')
