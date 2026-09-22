@@ -56,11 +56,10 @@ export default function Dashboard() {
 
   // Get last snapshot info
   const lastSnapshot = history.length > 0 ? history[history.length - 1] : null;
-  const previousSnapshot = history.length > 1 ? history[history.length - 2] : null;
 
-  // Calculate month-over-month change
-  const netWorthChange = lastSnapshot && previousSnapshot
-    ? lastSnapshot.net_worth - previousSnapshot.net_worth
+  // Change in live net worth since the most recent snapshot
+  const netWorthChange = lastSnapshot && !assetsLoading
+    ? totalNetWorth - lastSnapshot.net_worth
     : null;
 
   const totalBudget = budgetStatus
