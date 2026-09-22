@@ -31,7 +31,6 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { formatCurrency } from '@/lib/format';
 import { assetTypeColor } from '@/lib/colors';
-import { notifyAssetsChanged } from '@/lib/events';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -123,7 +122,6 @@ export default function AssetsPage() {
   const handleDeleteAsset = async (asset: Asset) => {
     try {
       await deleteAsset(asset.id);
-      notifyAssetsChanged();
       toast.success('Asset deleted', {
         action: {
           label: 'Undo',
@@ -140,7 +138,6 @@ export default function AssetsPage() {
                 ticker_symbol: asset.ticker_symbol || undefined,
                 shares: asset.shares ?? undefined,
               });
-              notifyAssetsChanged();
               toast.success('Asset restored');
             } catch {
               toast.error('Failed to undo');

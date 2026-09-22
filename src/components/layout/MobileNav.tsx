@@ -1,18 +1,18 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { MoreHorizontal } from 'lucide-react';
 import { mobileCoreNav, mobileMoreNav } from '@/lib/navigation';
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
+import { TransitionLink } from './TransitionLink';
 
 export function MobileNav() {
   const pathname = usePathname();
   const isMoreActive = mobileMoreNav.some((item) => pathname === item.href);
 
   const renderItem = (item: { name: string; href: string; icon: typeof mobileCoreNav[number]['icon'] }, active: boolean) => (
-    <Link
+    <TransitionLink
       key={item.href}
       href={item.href}
       aria-label={item.name}
@@ -30,7 +30,7 @@ export function MobileNav() {
         <item.icon className={cn('h-[18px] w-[18px]', active && 'text-sidebar-primary')} />
       </div>
       <span className={cn(active && 'font-semibold')}>{item.name}</span>
-    </Link>
+    </TransitionLink>
   );
 
   return (
@@ -48,7 +48,7 @@ export function MobileNav() {
                 const active = pathname === item.href;
                 return (
                   <SheetClose asChild key={item.href}>
-                    <Link
+                    <TransitionLink
                       href={item.href}
                       className={cn(
                         'flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors',
@@ -59,7 +59,7 @@ export function MobileNav() {
                     >
                       <item.icon className={cn('h-5 w-5', active && 'text-sidebar-primary')} />
                       {item.name}
-                    </Link>
+                    </TransitionLink>
                   </SheetClose>
                 );
               })}

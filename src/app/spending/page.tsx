@@ -30,7 +30,6 @@ import { Plus, MoreHorizontal, Pencil, Trash2, ChevronLeft, ChevronRight, Chevro
 import { toast } from 'sonner';
 import { format, addMonths, subMonths } from 'date-fns';
 import { formatCurrency } from '@/lib/format';
-import { TRANSACTIONS_CHANGED_EVENT, notifyTransactionsChanged } from '@/lib/events';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,21 +43,11 @@ import {
 
 export default function SpendingPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const { transactions, loading, createTransaction, updateTransaction, deleteTransaction, refetch: refetchTransactions } =
+  const { transactions, loading, createTransaction, updateTransaction, deleteTransaction } =
     useTransactions(currentMonth);
   const { categories } = useSpendingCategories();
-  const { summary, refetch: refetchSummary } = useSpendingSummary(1, currentMonth);
-  const { trend, loading: trendLoading, refetch: refetchTrend } = useMonthlySpendingTrend(12);
-
-  useEffect(() => {
-    const onChanged = () => {
-      refetchTransactions();
-      refetchSummary();
-      refetchTrend();
-    };
-    window.addEventListener(TRANSACTIONS_CHANGED_EVENT, onChanged);
-    return () => window.removeEventListener(TRANSACTIONS_CHANGED_EVENT, onChanged);
-  }, [refetchTransactions, refetchSummary, refetchTrend]);
+  const { summary } = useSpendingSummary(1, currentMonth);
+  const { trend, loading: trendLoading } = useMonthlySpendingTrend(12);
 
   const [formOpen, setFormOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null);
@@ -152,7 +141,6 @@ export default function SpendingPage() {
   const handleDeleteTransaction = async (transaction: Transaction) => {
     try {
       await deleteTransaction(transaction.id);
-      notifyTransactionsChanged();
       toast.success('Transaction deleted', {
         action: {
           label: 'Undo',
@@ -164,7 +152,6 @@ export default function SpendingPage() {
                 description: transaction.description || undefined,
                 transaction_date: transaction.transaction_date.slice(0, 10),
               });
-              notifyTransactionsChanged();
               toast.success('Transaction restored');
             } catch {
               toast.error('Failed to undo');

@@ -1,83 +1,67 @@
-import { useState, useCallback, useEffect } from 'react';
+'use client';
+
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { UserSettings, IncomeRecord } from '@/lib/supabase/types';
 
 export function useUserSettings() {
-  const [settings, setSettings] = useState<UserSettings | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const qc = useQueryClient();
   const supabase = createClient();
 
-  const fetchSettings = useCallback(async () => {
-    try {
-      setLoading(true);
-      
-      const { data, error } = await supabase
-        .from('user_settings')
-        .select('*')
-        .limit(1)
-        .single();
-        
-      // If no row exists, we insert one on the fly (since we only need 1 row for a single-user app)
+  const query = useQuery({
+    queryKey: ['user-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('user_settings').select('*').limit(1).single();
+
       if (error && error.code === 'PGRST116') {
         const { data: newData, error: insertError } = await supabase
           .from('user_settings')
           .insert({})
           .select()
           .single();
-          
         if (insertError) throw insertError;
-        setSettings(newData);
-      } else if (error) {
-        throw error;
-      } else {
-        setSettings(data);
+        return newData as UserSettings;
       }
-    } catch (e) {
-      setError(e instanceof Error ? e : new Error('Failed to fetch settings'));
-    } finally {
-      setLoading(false);
-    }
-  }, [supabase]);
+      if (error) throw error;
+      return data as UserSettings;
+    },
+  });
 
-  // Automatically fetch on mount
-  useEffect(() => {
-    fetchSettings();
-  }, [fetchSettings]);
-
-  const updateSettings = async (updates: Partial<Omit<UserSettings, 'id' | 'created_at' | 'updated_at'>>) => {
-    try {
+  const updateSettings = useMutation({
+    mutationFn: async (updates: Partial<Omit<UserSettings, 'id' | 'created_at' | 'updated_at'>>) => {
+      const settings = query.data;
       if (!settings?.id) throw new Error('No settings record found to update');
-      
+
       const { data, error } = await supabase
         .from('user_settings')
         .update(updates)
         .eq('id', settings.id)
         .select()
         .single();
-
       if (error) throw error;
-      setSettings(data);
       return data;
-    } catch (e) {
-      throw e instanceof Error ? e : new Error('Failed to update settings');
-    }
-  };
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['user-settings'] }),
+  });
 
-  return { settings, loading, error, fetchSettings, updateSettings };
+  return {
+    settings: query.data || null,
+    loading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
+    updateSettings: (u: Partial<Omit<UserSettings, 'id' | 'created_at' | 'updated_at'>>) => updateSettings.mutateAsync(u),
+  };
 }
 
-export function useIncomeRecords() {
-  const [records, setRecords] = useState<IncomeRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+export function useIncomeRecords(year?: number) {
+  const qc = useQueryClient();
   const supabase = createClient();
 
-  const fetchRecords = useCallback(async (year: number) => {
-    try {
-      setLoading(true);
-      const startOfYear = `${year}-01-01`;
-      const endOfYear = `${year}-12-31`;
+  const query = useQuery({
+    queryKey: ['income-records', year ?? 'all'],
+    queryFn: async () => {
+      const startOfYear = year ? `${year}-01-01` : '1970-01-01';
+      const endOfYear = year ? `${year}-12-31` : '2999-12-31';
 
       const { data, error } = await supabase
         .from('income_records')
@@ -87,29 +71,28 @@ export function useIncomeRecords() {
         .order('month', { ascending: false });
 
       if (error) throw error;
-      setRecords(data || []);
-    } catch (e) {
-      setError(e instanceof Error ? e : new Error('Failed to fetch income records'));
-    } finally {
-      setLoading(false);
-    }
-  }, [supabase]);
+      return data as IncomeRecord[];
+    },
+  });
 
-  const saveRecord = async (record: Omit<IncomeRecord, 'id' | 'created_at' | 'updated_at'>) => {
-    try {
-      // Upsert based on the month (which is unique)
+  const saveRecord = useMutation({
+    mutationFn: async (record: Omit<IncomeRecord, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('income_records')
         .upsert(record, { onConflict: 'month' })
         .select()
         .single();
-
       if (error) throw error;
       return data;
-    } catch (e) {
-      throw e instanceof Error ? e : new Error('Failed to save income record');
-    }
-  };
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['income-records'] }),
+  });
 
-  return { records, loading, error, fetchRecords, saveRecord };
+  return {
+    records: query.data || [],
+    loading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
+    saveRecord: (r: Omit<IncomeRecord, 'id' | 'created_at' | 'updated_at'>) => saveRecord.mutateAsync(r),
+  };
 }

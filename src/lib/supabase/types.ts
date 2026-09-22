@@ -264,6 +264,13 @@ export interface IncomeRecord {
   updated_at: string;
 }
 
+export interface Insight {
+  id: string;
+  week_start: string;
+  analysis: string;
+  created_at: string;
+}
+
 // Aggregated data types for charts
 export interface NetWorthBreakdown {
   category: string;
@@ -359,6 +366,11 @@ export interface Database {
         Row: IncomeRecord;
         Insert: Omit<IncomeRecord, 'id' | 'created_at' | 'updated_at'> & { id?: string };
         Update: Partial<Omit<IncomeRecord, 'id' | 'created_at' | 'updated_at'>>;
+      };
+      insights: {
+        Row: Insight;
+        Insert: Omit<Insight, 'id' | 'created_at'> & { id?: string };
+        Update: Partial<Omit<Insight, 'id' | 'created_at'>>;
       };
     };
   };

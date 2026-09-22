@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import {
   Transaction,
@@ -16,101 +16,91 @@ import {
 } from '@/lib/supabase/types';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 
-export async function insertTransaction(data: CreateTransaction): Promise<Transaction> {
-  const supabase = createClient();
-  const { data: inserted, error } = await supabase
-    .from('transactions')
-    .insert(data)
-    .select('*, category:spending_categories(*)')
-    .single();
+export const queryKeys = {
+  spendingCategories: ['spending-categories'] as const,
+  transactions: (monthKey: string) => ['transactions', monthKey] as const,
+  spendingSummary: (months: number, monthKey: string) => ['spending-summary', months, monthKey] as const,
+  spendingTrend: (months: number) => ['spending-trend', months] as const,
+  allTransactions: ['all-transactions'] as const,
+  budgetStatus: ['budget-status'] as const,
+  budgetSurplus: ['budget-surplus'] as const,
+  surplusConfig: ['surplus-config'] as const,
+  recurringTransactions: ['recurring-transactions'] as const,
+};
 
-  if (error) throw error;
-  return inserted as Transaction;
+function invalidateSpending(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: ['transactions'] });
+  qc.invalidateQueries({ queryKey: ['spending-summary'] });
+  qc.invalidateQueries({ queryKey: ['spending-trend'] });
+  qc.invalidateQueries({ queryKey: ['all-transactions'] });
+  qc.invalidateQueries({ queryKey: ['budget-status'] });
+  qc.invalidateQueries({ queryKey: ['budget-surplus'] });
 }
 
 export function useSpendingCategories() {
-  const [categories, setCategories] = useState<SpendingCategory[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const qc = useQueryClient();
+  const supabase = createClient();
 
-  const fetchCategories = useCallback(async () => {
-    try {
-      setLoading(true);
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('spending_categories')
-        .select('*')
-        .order('name');
-
+  const query = useQuery({
+    queryKey: queryKeys.spendingCategories,
+    queryFn: async () => {
+      const { data, error } = await supabase.from('spending_categories').select('*').order('name');
       if (error) throw error;
-      setCategories(data || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch categories');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return data as SpendingCategory[];
+    },
+  });
 
-  useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+  const invalidate = () => qc.invalidateQueries({ queryKey: queryKeys.spendingCategories });
 
-  const createCategory = async (category: CreateSpendingCategory) => {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('spending_categories')
-      .insert(category)
-      .select()
-      .single();
+  const createCategory = useMutation({
+    mutationFn: async (category: CreateSpendingCategory) => {
+      const { data, error } = await supabase.from('spending_categories').insert(category).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: invalidate,
+  });
 
-    if (error) throw error;
-    await fetchCategories();
-    return data;
-  };
+  const updateCategory = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<CreateSpendingCategory> }) => {
+      const { data, error } = await supabase.from('spending_categories').update(updates).eq('id', id).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: invalidate,
+  });
 
-  const updateCategory = async (id: string, updates: Partial<CreateSpendingCategory>) => {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('spending_categories')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) throw error;
-    await fetchCategories();
-    return data;
-  };
-
-  const deleteCategory = async (id: string) => {
-    const supabase = createClient();
-    const { error } = await supabase.from('spending_categories').delete().eq('id', id);
-    if (error) throw error;
-    await fetchCategories();
-  };
+  const deleteCategory = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('spending_categories').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidate();
+      invalidateSpending(qc);
+    },
+  });
 
   return {
-    categories,
-    loading,
-    error,
-    refetch: fetchCategories,
-    createCategory,
-    updateCategory,
-    deleteCategory,
+    categories: query.data || [],
+    loading: query.isLoading,
+    error: query.error ? (query.error as Error).message : null,
+    refetch: query.refetch,
+    createCategory: (c: CreateSpendingCategory) => createCategory.mutateAsync(c),
+    updateCategory: (id: string, u: Partial<CreateSpendingCategory>) => updateCategory.mutateAsync({ id, updates: u }),
+    deleteCategory: (id: string) => deleteCategory.mutateAsync(id),
   };
 }
 
 export function useTransactions(month?: Date) {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const qc = useQueryClient();
+  const supabase = createClient();
+  const monthKey = month ? format(month, 'yyyy-MM') : 'all';
 
-  const fetchTransactions = useCallback(async () => {
-    try {
-      setLoading(true);
-      const supabase = createClient();
-
-      let query = supabase
+  const query = useQuery({
+    queryKey: queryKeys.transactions(monthKey),
+    queryFn: async () => {
+      let q = supabase
         .from('transactions')
         .select('*, category:spending_categories(*)')
         .order('transaction_date', { ascending: false });
@@ -118,79 +108,68 @@ export function useTransactions(month?: Date) {
       if (month) {
         const start = format(startOfMonth(month), 'yyyy-MM-dd');
         const end = format(endOfMonth(month), 'yyyy-MM-dd');
-        query = query.gte('transaction_date', start).lte('transaction_date', end);
+        q = q.gte('transaction_date', start).lte('transaction_date', end);
       }
 
-      const { data, error } = await query;
-
+      const { data, error } = await q;
       if (error) throw error;
-      setTransactions(data || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch transactions');
-    } finally {
-      setLoading(false);
-    }
-  }, [month]);
+      return data as Transaction[];
+    },
+  });
 
-  useEffect(() => {
-    fetchTransactions();
-  }, [fetchTransactions]);
+  const createTransaction = useMutation({
+    mutationFn: async (transaction: CreateTransaction) => {
+      const { data, error } = await supabase
+        .from('transactions')
+        .insert(transaction)
+        .select('*, category:spending_categories(*)')
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => invalidateSpending(qc),
+  });
 
-  const createTransaction = async (transaction: CreateTransaction) => {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('transactions')
-      .insert(transaction)
-      .select('*, category:spending_categories(*)')
-      .single();
+  const updateTransaction = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: UpdateTransaction }) => {
+      const { data, error } = await supabase
+        .from('transactions')
+        .update(updates)
+        .eq('id', id)
+        .select('*, category:spending_categories(*)')
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => invalidateSpending(qc),
+  });
 
-    if (error) throw error;
-    await fetchTransactions();
-    return data;
-  };
-
-  const updateTransaction = async (id: string, updates: UpdateTransaction) => {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('transactions')
-      .update(updates)
-      .eq('id', id)
-      .select('*, category:spending_categories(*)')
-      .single();
-
-    if (error) throw error;
-    await fetchTransactions();
-    return data;
-  };
-
-  const deleteTransaction = async (id: string) => {
-    const supabase = createClient();
-    const { error } = await supabase.from('transactions').delete().eq('id', id);
-    if (error) throw error;
-    await fetchTransactions();
-  };
+  const deleteTransaction = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('transactions').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => invalidateSpending(qc),
+  });
 
   return {
-    transactions,
-    loading,
-    error,
-    refetch: fetchTransactions,
-    createTransaction,
-    updateTransaction,
-    deleteTransaction,
+    transactions: query.data || [],
+    loading: query.isLoading,
+    error: query.error ? (query.error as Error).message : null,
+    refetch: query.refetch,
+    createTransaction: (t: CreateTransaction) => createTransaction.mutateAsync(t),
+    updateTransaction: (id: string, u: UpdateTransaction) => updateTransaction.mutateAsync({ id, updates: u }),
+    deleteTransaction: (id: string) => deleteTransaction.mutateAsync(id),
   };
 }
 
-export function useSpendingSummary(months: number = 1, baseMonth?: Date) {  const [summary, setSummary] = useState<SpendingSummary[]>([]);
-  const [totalSpending, setTotalSpending] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export function useSpendingSummary(months: number = 1, baseMonth?: Date) {
+  const supabase = createClient();
+  const monthKey = baseMonth ? format(baseMonth, 'yyyy-MM') : 'current';
 
-  const fetchSummary = useCallback(async () => {
-    try {
-      setLoading(true);
-      const supabase = createClient();
-
+  const query = useQuery({
+    queryKey: queryKeys.spendingSummary(months, monthKey),
+    queryFn: async () => {
       const anchor = baseMonth || new Date();
       const startDate = format(startOfMonth(subMonths(anchor, months - 1)), 'yyyy-MM-dd');
       const endDate = format(endOfMonth(anchor), 'yyyy-MM-dd');
@@ -203,7 +182,6 @@ export function useSpendingSummary(months: number = 1, baseMonth?: Date) {  cons
 
       if (error) throw error;
 
-      // Group by category
       const categoryTotals: Record<string, { total: number; count: number; color: string }> = {};
       let total = 0;
 
@@ -221,28 +199,20 @@ export function useSpendingSummary(months: number = 1, baseMonth?: Date) {  cons
       });
 
       const summaryArray: SpendingSummary[] = Object.entries(categoryTotals)
-        .map(([category, { total, count, color }]) => ({
-          category,
-          color,
-          total,
-          count,
-        }))
+        .map(([category, { total, count, color }]) => ({ category, color, total, count }))
         .sort((a, b) => b.total - a.total);
 
-      setSummary(summaryArray);
-      setTotalSpending(total);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch summary');
-    } finally {
-      setLoading(false);
-    }
-  }, [months, baseMonth]);
+      return { summary: summaryArray, totalSpending: total };
+    },
+  });
 
-  useEffect(() => {
-    fetchSummary();
-  }, [fetchSummary]);
-
-  return { summary, totalSpending, loading, error, refetch: fetchSummary };
+  return {
+    summary: query.data?.summary || [],
+    totalSpending: query.data?.totalSpending || 0,
+    loading: query.isLoading,
+    error: query.error ? (query.error as Error).message : null,
+    refetch: query.refetch,
+  };
 }
 
 export interface MonthlySpendingTrend {
@@ -253,15 +223,11 @@ export interface MonthlySpendingTrend {
 }
 
 export function useMonthlySpendingTrend(months: number = 12) {
-  const [trend, setTrend] = useState<MonthlySpendingTrend[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const supabase = createClient();
 
-  const fetchTrend = useCallback(async () => {
-    try {
-      setLoading(true);
-      const supabase = createClient();
-
+  const query = useQuery({
+    queryKey: queryKeys.spendingTrend(months),
+    queryFn: async () => {
       const anchor = new Date();
       const start = format(startOfMonth(subMonths(anchor, months - 1)), 'yyyy-MM-dd');
       const end = format(endOfMonth(anchor), 'yyyy-MM-dd');
@@ -287,66 +253,47 @@ export function useMonthlySpendingTrend(months: number = 12) {
         const d = subMonths(startOfMonth(anchor), i);
         const key = format(d, 'yyyy-MM');
         const entry = byMonth[key] || { total: 0, count: 0 };
-        result.push({
-          month: key,
-          label: format(d, 'MMM yy'),
-          total: entry.total,
-          count: entry.count,
-        });
+        result.push({ month: key, label: format(d, 'MMM yy'), total: entry.total, count: entry.count });
       }
+      return result;
+    },
+  });
 
-      setTrend(result);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch spending trend');
-    } finally {
-      setLoading(false);
-    }
-  }, [months]);
-
-  useEffect(() => {
-    fetchTrend();
-  }, [fetchTrend]);
-
-  return { trend, loading, error, refetch: fetchTrend };
+  return {
+    trend: query.data || [],
+    loading: query.isLoading,
+    error: query.error ? (query.error as Error).message : null,
+    refetch: query.refetch,
+  };
 }
 
 export function useAllTransactions(enabled: boolean = false) {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const supabase = createClient();
 
-  const fetchAll = useCallback(async () => {
-    if (!enabled) {
-      setTransactions([]);
-      return;
-    }
-    try {
-      setLoading(true);
-      const supabase = createClient();
-      // Personal-scale data: a single fetch is sufficient for cross-month search.
+  const query = useQuery({
+    queryKey: queryKeys.allTransactions,
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('transactions')
         .select('*, category:spending_categories(*)')
         .order('transaction_date', { ascending: false })
         .limit(1000);
-
       if (error) throw error;
-      setTransactions(data || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch transactions');
-    } finally {
-      setLoading(false);
-    }
-  }, [enabled]);
+      return data as Transaction[];
+    },
+    enabled,
+  });
 
-  useEffect(() => {
-    fetchAll();
-  }, [fetchAll]);
-
-  return { transactions, loading, error, refetch: fetchAll };
+  return {
+    transactions: query.data || [],
+    loading: query.isLoading,
+    error: query.error ? (query.error as Error).message : null,
+    refetch: query.refetch,
+  };
 }
 
-export interface BudgetStatus {  category: SpendingCategory;
+export interface BudgetStatus {
+  category: SpendingCategory;
   spent: number;
   budget: number | null;
   remaining: number | null;
@@ -355,20 +302,14 @@ export interface BudgetStatus {  category: SpendingCategory;
 }
 
 export function useBudgetStatus() {
-  const [budgetStatus, setBudgetStatus] = useState<BudgetStatus[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const supabase = createClient();
 
-  const fetchBudgetStatus = useCallback(async () => {
-    try {
-      setLoading(true);
-      const supabase = createClient();
-
-      // Get current month's date range
+  const query = useQuery({
+    queryKey: queryKeys.budgetStatus,
+    queryFn: async () => {
       const startDate = format(startOfMonth(new Date()), 'yyyy-MM-dd');
       const endDate = format(endOfMonth(new Date()), 'yyyy-MM-dd');
 
-      // Fetch categories and transactions in parallel
       const [categoriesResult, transactionsResult] = await Promise.all([
         supabase.from('spending_categories').select('*').order('name'),
         supabase
@@ -384,7 +325,6 @@ export function useBudgetStatus() {
       const categories = categoriesResult.data || [];
       const transactions = transactionsResult.data || [];
 
-      // Calculate spent per category
       const spentByCategory: Record<string, number> = {};
       transactions.forEach((t) => {
         if (t.category_id) {
@@ -392,50 +332,31 @@ export function useBudgetStatus() {
         }
       });
 
-      // Build budget status for each category
-      const status: BudgetStatus[] = categories.map((category) => {
+      return categories.map((category): BudgetStatus => {
         const spent = spentByCategory[category.id] || 0;
         const budget = category.budget_amount;
         const remaining = budget ? budget - spent : null;
         const percentUsed = budget ? (spent / budget) * 100 : null;
         const isOverBudget = budget ? spent > budget : false;
-
-        return {
-          category,
-          spent,
-          budget,
-          remaining,
-          percentUsed,
-          isOverBudget,
-        };
+        return { category, spent, budget, remaining, percentUsed, isOverBudget };
       });
+    },
+  });
 
-      setBudgetStatus(status);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch budget status');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchBudgetStatus();
-  }, [fetchBudgetStatus]);
-
-  return { budgetStatus, loading, error, refetch: fetchBudgetStatus };
+  return {
+    budgetStatus: query.data || [],
+    loading: query.isLoading,
+    error: query.error ? (query.error as Error).message : null,
+    refetch: query.refetch,
+  };
 }
 
 export function useBudgetSurplus() {
-  const [monthlyBreakdown, setMonthlyBreakdown] = useState<BudgetSurplus[]>([]);
-  const [totalSurplus, setTotalSurplus] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const supabase = createClient();
 
-  const fetchSurplus = useCallback(async () => {
-    try {
-      setLoading(true);
-      const supabase = createClient();
-
+  const query = useQuery({
+    queryKey: queryKeys.budgetSurplus,
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('budget_surplus')
         .select('*')
@@ -445,7 +366,6 @@ export function useBudgetSurplus() {
 
       const rows = (data || []) as BudgetSurplus[];
 
-      // -- SYNTHESIZE CURRENT MONTH LIVE PROJECTION --
       const today = new Date();
       const currentMonthStr = format(startOfMonth(today), 'yyyy-MM-dd');
       const hasCurrentMonth = rows.some((r) => r.month === currentMonthStr);
@@ -466,7 +386,7 @@ export function useBudgetSurplus() {
         ]);
 
         const config = configResult.data || { monthly_income: 0, monthly_savings_target: 0 };
-        const activeIncome = (incomeResult.data && incomeResult.data.net_pay)
+        const activeIncome = incomeResult.data && incomeResult.data.net_pay
           ? Number(incomeResult.data.net_pay)
           : Number(config.monthly_income);
 
@@ -477,10 +397,7 @@ export function useBudgetSurplus() {
           0
         );
 
-        const totalSpent = (transactionsResult.data || []).reduce(
-          (sum, t) => sum + Number(t.amount),
-          0
-        );
+        const totalSpent = (transactionsResult.data || []).reduce((sum, t) => sum + Number(t.amount), 0);
 
         const surplusAmount = Math.round((discretionaryAllowance - totalSpent) * 100) / 100;
 
@@ -495,74 +412,69 @@ export function useBudgetSurplus() {
         } as BudgetSurplus);
       }
 
-      setMonthlyBreakdown(rows);
-      setTotalSurplus(
-        rows.reduce((sum, r) => sum + Number(r.surplus_amount), 0)
-      );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch budget surplus');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return { monthlyBreakdown: rows, totalSurplus: rows.reduce((sum, r) => sum + Number(r.surplus_amount), 0) };
+    },
+  });
 
-  useEffect(() => {
-    fetchSurplus();
-  }, [fetchSurplus]);
-
-  return { monthlyBreakdown, totalSurplus, loading, error, refetch: fetchSurplus };
+  return {
+    monthlyBreakdown: query.data?.monthlyBreakdown || [],
+    totalSurplus: query.data?.totalSurplus || 0,
+    loading: query.isLoading,
+    error: query.error ? (query.error as Error).message : null,
+    refetch: query.refetch,
+  };
 }
 
 export function useSurplusConfig() {
-  const [config, setConfig] = useState<SurplusConfig | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const qc = useQueryClient();
+  const supabase = createClient();
 
-  const fetchConfig = useCallback(async () => {
-    try {
-      setLoading(true);
-      const supabase = createClient();
+  const query = useQuery({
+    queryKey: queryKeys.surplusConfig,
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('surplus_config')
         .select('*')
         .eq('is_singleton', true)
         .single();
 
-      if (error && error.code !== 'PGRST116') throw error; // Ignoring 0 row errors
-      setConfig(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch surplus config');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (error && error.code !== 'PGRST116') throw error;
+      return data as SurplusConfig | null;
+    },
+  });
 
-  useEffect(() => {
-    fetchConfig();
-  }, [fetchConfig]);
+  const updateConfig = useMutation({
+    mutationFn: async (input: { monthly_income: number; monthly_savings_target: number; initial_balance: number }) => {
+      const { data, error } = await supabase
+        .from('surplus_config')
+        .upsert(
+          { is_singleton: true, ...input },
+          { onConflict: 'is_singleton' }
+        )
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.surplusConfig });
+      qc.invalidateQueries({ queryKey: queryKeys.budgetSurplus });
+    },
+  });
 
-  const updateConfig = async (monthly_income: number, monthly_savings_target: number, initial_balance: number) => {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('surplus_config')
-      .upsert(
-        { is_singleton: true, monthly_income, monthly_savings_target, initial_balance },
-        { onConflict: 'is_singleton' }
-      )
-      .select()
-      .single();
-    if (error) throw error;
-    setConfig(data);
-    return data;
+  return {
+    config: query.data || null,
+    loading: query.isLoading,
+    error: query.error ? (query.error as Error).message : null,
+    refetch: query.refetch,
+    updateConfig: (monthly_income: number, monthly_savings_target: number, initial_balance: number) =>
+      updateConfig.mutateAsync({ monthly_income, monthly_savings_target, initial_balance }),
   };
-
-  return { config, loading, error, refetch: fetchConfig, updateConfig };
 }
 
 export async function updateSurplusManualAdjustment(id: string, manual_adjustments: number, adjustment_description?: string) {
   const supabase = createClient();
 
-  // First, fetch the current row to get discretionary_allowance and total_spent
   const { data: existing, error: fetchError } = await supabase
     .from('budget_surplus')
     .select('*')
@@ -572,7 +484,6 @@ export async function updateSurplusManualAdjustment(id: string, manual_adjustmen
   if (fetchError) throw fetchError;
   if (!existing) throw new Error('Surplus record not found');
 
-  // Recalculate surplus_amount: base surplus (without any adjustments) + new adjustment
   const baseSurplus = Number(existing.discretionary_allowance) - Number(existing.total_spent);
   const newSurplusAmount = Math.round((baseSurplus + manual_adjustments) * 100) / 100;
 
@@ -591,75 +502,85 @@ export async function updateSurplusManualAdjustment(id: string, manual_adjustmen
   return data;
 }
 
+export function useAddTransaction() {
+  const qc = useQueryClient();
+  const supabase = createClient();
+
+  return useMutation({
+    mutationFn: async (t: CreateTransaction) => {
+      const { data, error } = await supabase
+        .from('transactions')
+        .insert(t)
+        .select('*, category:spending_categories(*)')
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => invalidateSpending(qc),
+  });
+}
+
 export function useRecurringTransactions() {
-  const [recurringTransactions, setRecurringTransactions] = useState<RecurringTransaction[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const qc = useQueryClient();
+  const supabase = createClient();
 
-  const fetchRecurringTransactions = useCallback(async () => {
-    try {
-      setLoading(true);
-      const supabase = createClient();
-
+  const query = useQuery({
+    queryKey: queryKeys.recurringTransactions,
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('recurring_transactions')
         .select('*, category:spending_categories(*)')
         .order('created_at', { ascending: false });
-
       if (error) throw error;
-      setRecurringTransactions((data as RecurringTransaction[]) || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch recurring transactions');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return data as RecurringTransaction[];
+    },
+  });
 
-  useEffect(() => {
-    fetchRecurringTransactions();
-  }, [fetchRecurringTransactions]);
+  const invalidate = () => qc.invalidateQueries({ queryKey: queryKeys.recurringTransactions });
 
-  const createRecurringTransaction = async (transaction: CreateRecurringTransaction) => {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('recurring_transactions')
-      .insert(transaction)
-      .select('*, category:spending_categories(*)')
-      .single();
+  const createRecurringTransaction = useMutation({
+    mutationFn: async (transaction: CreateRecurringTransaction) => {
+      const { data, error } = await supabase
+        .from('recurring_transactions')
+        .insert(transaction)
+        .select('*, category:spending_categories(*)')
+        .single();
+      if (error) throw error;
+      return data as RecurringTransaction;
+    },
+    onSuccess: invalidate,
+  });
 
-    if (error) throw error;
-    await fetchRecurringTransactions();
-    return data as RecurringTransaction;
-  };
+  const updateRecurringTransaction = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<CreateRecurringTransaction> & { is_active?: boolean } }) => {
+      const { data, error } = await supabase
+        .from('recurring_transactions')
+        .update(updates)
+        .eq('id', id)
+        .select('*, category:spending_categories(*)')
+        .single();
+      if (error) throw error;
+      return data as RecurringTransaction;
+    },
+    onSuccess: invalidate,
+  });
 
-  const updateRecurringTransaction = async (id: string, updates: Partial<CreateRecurringTransaction> & { is_active?: boolean }) => {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('recurring_transactions')
-      .update(updates)
-      .eq('id', id)
-      .select('*, category:spending_categories(*)')
-      .single();
-
-    if (error) throw error;
-    await fetchRecurringTransactions();
-    return data as RecurringTransaction;
-  };
-
-  const deleteRecurringTransaction = async (id: string) => {
-    const supabase = createClient();
-    const { error } = await supabase.from('recurring_transactions').delete().eq('id', id);
-    if (error) throw error;
-    await fetchRecurringTransactions();
-  };
+  const deleteRecurringTransaction = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('recurring_transactions').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+  });
 
   return {
-    recurringTransactions,
-    loading,
-    error,
-    refetch: fetchRecurringTransactions,
-    createRecurringTransaction,
-    updateRecurringTransaction,
-    deleteRecurringTransaction,
+    recurringTransactions: query.data || [],
+    loading: query.isLoading,
+    error: query.error ? (query.error as Error).message : null,
+    refetch: query.refetch,
+    createRecurringTransaction: (t: CreateRecurringTransaction) => createRecurringTransaction.mutateAsync(t),
+    updateRecurringTransaction: (id: string, u: Partial<CreateRecurringTransaction> & { is_active?: boolean }) =>
+      updateRecurringTransaction.mutateAsync({ id, updates: u }),
+    deleteRecurringTransaction: (id: string) => deleteRecurringTransaction.mutateAsync(id),
   };
 }

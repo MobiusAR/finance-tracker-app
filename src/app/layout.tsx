@@ -5,6 +5,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { Toaster } from "@/components/ui/sonner";
 import { PwaRegistry } from "@/components/layout/PwaRegistry";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
+import { QueryProvider } from "@/components/layout/QueryProvider";
 import type { Viewport } from "next";
 
 const geistSans = Geist({
@@ -57,9 +58,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} antialiased`}
       >
         <ThemeProvider>
-          <AppShell>{children}</AppShell>
-          <Toaster />
-          <PwaRegistry />
+          <QueryProvider>
+            <AppShell>{children}</AppShell>
+            <Toaster />
+            <PwaRegistry />
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>

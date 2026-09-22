@@ -4,17 +4,16 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TransactionForm } from '@/components/forms/TransactionForm';
-import { useSpendingCategories, insertTransaction } from '@/hooks/useTransactions';
+import { useSpendingCategories, useAddTransaction } from '@/hooks/useTransactions';
 import { CreateTransaction, UpdateTransaction } from '@/lib/supabase/types';
-import { notifyTransactionsChanged } from '@/lib/events';
 
 export function QuickAddExpense() {
   const [open, setOpen] = useState(false);
   const { categories } = useSpendingCategories();
+  const addTransaction = useAddTransaction();
 
   const handleSubmit = async (data: CreateTransaction | UpdateTransaction) => {
-    await insertTransaction(data as CreateTransaction);
-    notifyTransactionsChanged();
+    await addTransaction.mutateAsync(data as CreateTransaction);
   };
 
   return (

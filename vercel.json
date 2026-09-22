@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/snapshot-net-worth",
       "schedule": "30 15 * * *"
+    },
+    {
+      "path": "/api/cron/generate-insights",
+      "schedule": "0 1 * * 1"
     }
   ]
 }

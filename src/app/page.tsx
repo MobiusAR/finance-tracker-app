@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,12 +14,12 @@ import { NetWorthTrendChart } from '@/components/charts/NetWorthTrendChart';
 import { useNetWorthBreakdown } from '@/hooks/useAssets';
 import { useSpendingSummary, useBudgetStatus } from '@/hooks/useTransactions';
 import { useNetWorthHistory } from '@/hooks/useNetWorthHistory';
-import { TrendingUp, TrendingDown, Wallet, CreditCard, Camera, History, PieChart, Receipt, Shield, AlertTriangle, CheckCircle } from 'lucide-react';
+import { useLatestInsight } from '@/hooks/useInsights';
+import { TrendingUp, TrendingDown, Wallet, CreditCard, Camera, History, PieChart, Receipt, Shield, AlertTriangle, CheckCircle, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { formatCurrency } from '@/lib/format';
 import { ASSET_TYPE_COLORS } from '@/lib/colors';
-import { TRANSACTIONS_CHANGED_EVENT } from '@/lib/events';
 
 export default function Dashboard() {
   const {
@@ -33,21 +33,13 @@ export default function Dashboard() {
     loading: assetsLoading,
   } = useNetWorthBreakdown();
 
-  const { summary, totalSpending, loading: spendingLoading, refetch: refetchSpending } = useSpendingSummary(1);
-  const { budgetStatus, loading: budgetLoading, refetch: refetchBudget } = useBudgetStatus();
+  const { summary, totalSpending, loading: spendingLoading } = useSpendingSummary(1);
+  const { budgetStatus, loading: budgetLoading } = useBudgetStatus();
   const { history, loading: historyLoading, takeSnapshot, refetch: refetchHistory } = useNetWorthHistory();
+  const { insight } = useLatestInsight();
   const [selectedAssetCategory, setSelectedAssetCategory] = useState<string | null>(null);
   const [selectedLiabilityCategory, setSelectedLiabilityCategory] = useState<string | null>(null);
   const [snapshotLoading, setSnapshotLoading] = useState(false);
-
-  useEffect(() => {
-    const onChanged = () => {
-      refetchSpending();
-      refetchBudget();
-    };
-    window.addEventListener(TRANSACTIONS_CHANGED_EVENT, onChanged);
-    return () => window.removeEventListener(TRANSACTIONS_CHANGED_EVENT, onChanged);
-  }, [refetchSpending, refetchBudget]);
 
   const handleTakeSnapshot = async () => {
     try {
@@ -248,6 +240,26 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Weekly Insights */}
+      {insight && (
+        <div className="mb-4 px-2 md:px-0 md:mb-6">
+          <Card className="border-l-4 border-l-terracotta">
+            <CardHeader className="p-3 pb-1 sm:p-6 sm:pb-2">
+              <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                <Sparkles className="h-4 w-4 text-terracotta" />
+                Weekly Insights
+              </CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
+                Week of {format(new Date(insight.week_start), 'MMM d')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-3 pt-2 sm:p-6 sm:pt-2">
+              <p className="whitespace-pre-line text-sm text-muted-foreground">{insight.analysis}</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Tabbed Content */}
       <Tabs defaultValue="history" className="space-y-4 px-2 md:px-0">

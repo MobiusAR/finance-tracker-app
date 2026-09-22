@@ -1,81 +1,60 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
-import {
-    PersonalLoan,
-    CreatePersonalLoan,
-    UpdatePersonalLoan,
-} from '@/lib/supabase/types';
+import { PersonalLoan, CreatePersonalLoan, UpdatePersonalLoan } from '@/lib/supabase/types';
 
 export function useLoans() {
-    const [loans, setLoans] = useState<PersonalLoan[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const qc = useQueryClient();
+    const supabase = createClient();
 
-    const fetchLoans = useCallback(async () => {
-        try {
-            setLoading(true);
-            const supabase = createClient();
+    const query = useQuery({
+        queryKey: ['personal-loans'],
+        queryFn: async () => {
             const { data, error } = await supabase
                 .from('personal_loans')
                 .select('*')
                 .order('created_at', { ascending: false });
-
             if (error) throw error;
-            setLoans(data || []);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to fetch personal loans');
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+            return data as PersonalLoan[];
+        },
+    });
 
-    useEffect(() => {
-        fetchLoans();
-    }, [fetchLoans]);
+    const invalidate = () => qc.invalidateQueries({ queryKey: ['personal-loans'] });
 
-    const createLoan = async (loan: CreatePersonalLoan) => {
-        const supabase = createClient();
-        const { data, error } = await supabase
-            .from('personal_loans')
-            .insert(loan)
-            .select()
-            .single();
+    const createLoan = useMutation({
+        mutationFn: async (loan: CreatePersonalLoan) => {
+            const { data, error } = await supabase.from('personal_loans').insert(loan).select().single();
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: invalidate,
+    });
 
-        if (error) throw error;
-        await fetchLoans();
-        return data;
-    };
+    const updateLoan = useMutation({
+        mutationFn: async ({ id, updates }: { id: string; updates: UpdatePersonalLoan }) => {
+            const { data, error } = await supabase.from('personal_loans').update(updates).eq('id', id).select().single();
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: invalidate,
+    });
 
-    const updateLoan = async (id: string, updates: UpdatePersonalLoan) => {
-        const supabase = createClient();
-        const { data, error } = await supabase
-            .from('personal_loans')
-            .update(updates)
-            .eq('id', id)
-            .select()
-            .single();
-
-        if (error) throw error;
-        await fetchLoans();
-        return data;
-    };
-
-    const deleteLoan = async (id: string) => {
-        const supabase = createClient();
-        const { error } = await supabase.from('personal_loans').delete().eq('id', id);
-        if (error) throw error;
-        await fetchLoans();
-    };
+    const deleteLoan = useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase.from('personal_loans').delete().eq('id', id);
+            if (error) throw error;
+        },
+        onSuccess: invalidate,
+    });
 
     return {
-        loans,
-        loading,
-        error,
-        refetch: fetchLoans,
-        createLoan,
-        updateLoan,
-        deleteLoan,
+        loans: query.data || [],
+        loading: query.isLoading,
+        error: query.error ? (query.error as Error).message : null,
+        refetch: query.refetch,
+        createLoan: (l: CreatePersonalLoan) => createLoan.mutateAsync(l),
+        updateLoan: (id: string, u: UpdatePersonalLoan) => updateLoan.mutateAsync({ id, updates: u }),
+        deleteLoan: (id: string) => deleteLoan.mutateAsync(id),
     };
 }

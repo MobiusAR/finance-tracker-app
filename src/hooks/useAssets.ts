@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import {
   Asset,
@@ -15,243 +15,215 @@ import {
 } from '@/lib/supabase/types';
 import { ASSET_TYPE_COLORS, DEFAULT_COLOR } from '@/lib/colors';
 
+export const assetQueryKeys = {
+  categories: ['asset-categories'] as const,
+  sources: (categoryId?: string) => ['asset-sources', categoryId || 'all'] as const,
+  assets: ['assets'] as const,
+  breakdown: ['net-worth-breakdown'] as const,
+};
+
+function invalidateAssets(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: ['assets'] });
+  qc.invalidateQueries({ queryKey: ['asset-categories'] });
+  qc.invalidateQueries({ queryKey: ['asset-sources'] });
+  qc.invalidateQueries({ queryKey: ['net-worth-breakdown'] });
+}
+
 export function useAssetCategories() {
-  const [categories, setCategories] = useState<AssetCategory[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const qc = useQueryClient();
+  const supabase = createClient();
 
-  const fetchCategories = useCallback(async () => {
-    try {
-      setLoading(true);
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('asset_categories')
-        .select('*')
-        .order('display_order');
-
+  const query = useQuery({
+    queryKey: assetQueryKeys.categories,
+    queryFn: async () => {
+      const { data, error } = await supabase.from('asset_categories').select('*').order('display_order');
       if (error) throw error;
-      setCategories(data || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch categories');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return data as AssetCategory[];
+    },
+  });
 
-  useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+  const invalidate = () => qc.invalidateQueries({ queryKey: assetQueryKeys.categories });
 
-  const createCategory = async (category: CreateAssetCategory) => {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('asset_categories')
-      .insert(category)
-      .select()
-      .single();
+  const createCategory = useMutation({
+    mutationFn: async (category: CreateAssetCategory) => {
+      const { data, error } = await supabase.from('asset_categories').insert(category).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      invalidate();
+      qc.invalidateQueries({ queryKey: ['net-worth-breakdown'] });
+    },
+  });
 
-    if (error) throw error;
-    await fetchCategories();
-    return data;
-  };
+  const updateCategory = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<CreateAssetCategory> }) => {
+      const { data, error } = await supabase.from('asset_categories').update(updates).eq('id', id).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      invalidate();
+      qc.invalidateQueries({ queryKey: ['net-worth-breakdown'] });
+    },
+  });
 
-  const updateCategory = async (id: string, updates: Partial<CreateAssetCategory>) => {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('asset_categories')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) throw error;
-    await fetchCategories();
-    return data;
-  };
-
-  const deleteCategory = async (id: string) => {
-    const supabase = createClient();
-    const { error } = await supabase.from('asset_categories').delete().eq('id', id);
-    if (error) throw error;
-    await fetchCategories();
-  };
+  const deleteCategory = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('asset_categories').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateAssets.bind(null, qc),
+  });
 
   return {
-    categories,
-    loading,
-    error,
-    refetch: fetchCategories,
-    createCategory,
-    updateCategory,
-    deleteCategory,
+    categories: query.data || [],
+    loading: query.isLoading,
+    error: query.error ? (query.error as Error).message : null,
+    refetch: query.refetch,
+    createCategory: (c: CreateAssetCategory) => createCategory.mutateAsync(c),
+    updateCategory: (id: string, u: Partial<CreateAssetCategory>) => updateCategory.mutateAsync({ id, updates: u }),
+    deleteCategory: (id: string) => deleteCategory.mutateAsync(id),
   };
 }
 
 export function useAssetSources(categoryId?: string) {
-  const [sources, setSources] = useState<AssetSource[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const qc = useQueryClient();
+  const supabase = createClient();
 
-  const fetchSources = useCallback(async () => {
-    try {
-      setLoading(true);
-      const supabase = createClient();
-      let query = supabase
-        .from('asset_sources')
-        .select('*, category:asset_categories(*)');
-
-      if (categoryId) {
-        query = query.eq('category_id', categoryId);
-      }
-
-      const { data, error } = await query.order('name');
-
+  const query = useQuery({
+    queryKey: assetQueryKeys.sources(categoryId),
+    queryFn: async () => {
+      let q = supabase.from('asset_sources').select('*, category:asset_categories(*)');
+      if (categoryId) q = q.eq('category_id', categoryId);
+      const { data, error } = await q.order('name');
       if (error) throw error;
-      setSources(data || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch sources');
-    } finally {
-      setLoading(false);
-    }
-  }, [categoryId]);
+      return data as AssetSource[];
+    },
+  });
 
-  useEffect(() => {
-    fetchSources();
-  }, [fetchSources]);
+  const invalidate = () => qc.invalidateQueries({ queryKey: ['asset-sources'] });
 
-  const createSource = async (source: CreateAssetSource) => {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('asset_sources')
-      .insert(source)
-      .select()
-      .single();
+  const createSource = useMutation({
+    mutationFn: async (source: CreateAssetSource) => {
+      const { data, error } = await supabase.from('asset_sources').insert(source).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: invalidate,
+  });
 
-    if (error) throw error;
-    await fetchSources();
-    return data;
+  const updateSource = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<CreateAssetSource> }) => {
+      const { data, error } = await supabase.from('asset_sources').update(updates).eq('id', id).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: invalidate,
+  });
+
+  const deleteSource = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('asset_sources').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidate();
+      qc.invalidateQueries({ queryKey: ['assets'] });
+      qc.invalidateQueries({ queryKey: ['net-worth-breakdown'] });
+    },
+  });
+
+  return {
+    sources: query.data || [],
+    loading: query.isLoading,
+    error: query.error ? (query.error as Error).message : null,
+    refetch: query.refetch,
+    createSource: (s: CreateAssetSource) => createSource.mutateAsync(s),
+    updateSource: (id: string, u: Partial<CreateAssetSource>) => updateSource.mutateAsync({ id, updates: u }),
+    deleteSource: (id: string) => deleteSource.mutateAsync(id),
   };
-
-  const updateSource = async (id: string, updates: Partial<CreateAssetSource>) => {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('asset_sources')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) throw error;
-    await fetchSources();
-    return data;
-  };
-
-  const deleteSource = async (id: string) => {
-    const supabase = createClient();
-    const { error } = await supabase.from('asset_sources').delete().eq('id', id);
-    if (error) throw error;
-    await fetchSources();
-  };
-
-  return { sources, loading, error, refetch: fetchSources, createSource, updateSource, deleteSource };
 }
 
 export function useAssets() {
-  const [assets, setAssets] = useState<Asset[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const qc = useQueryClient();
+  const supabase = createClient();
 
-  const fetchAssets = useCallback(async () => {
-    try {
-      setLoading(true);
-      const supabase = createClient();
+  const query = useQuery({
+    queryKey: assetQueryKeys.assets,
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('assets')
         .select('*, source:asset_sources(*), category:asset_categories(*)')
         .order('created_at', { ascending: false });
-
       if (error) throw error;
-      setAssets(data || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch assets');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return data as Asset[];
+    },
+  });
 
-  useEffect(() => {
-    fetchAssets();
-  }, [fetchAssets]);
-
-  const createAsset = async (asset: CreateAsset) => {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('assets')
-      .insert(asset)
-      .select('*, source:asset_sources(*), category:asset_categories(*)')
-      .single();
-
-    if (error) throw error;
-    await fetchAssets();
-    return data;
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ['assets'] });
+    qc.invalidateQueries({ queryKey: ['net-worth-breakdown'] });
   };
 
-  const updateAsset = async (id: string, updates: UpdateAsset) => {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('assets')
-      .update(updates)
-      .eq('id', id)
-      .select('*, source:asset_sources(*), category:asset_categories(*)')
-      .single();
+  const createAsset = useMutation({
+    mutationFn: async (asset: CreateAsset) => {
+      const { data, error } = await supabase
+        .from('assets')
+        .insert(asset)
+        .select('*, source:asset_sources(*), category:asset_categories(*)')
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: invalidate,
+  });
 
-    if (error) throw error;
-    await fetchAssets();
-    return data;
-  };
+  const updateAsset = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: UpdateAsset }) => {
+      const { data, error } = await supabase
+        .from('assets')
+        .update(updates)
+        .eq('id', id)
+        .select('*, source:asset_sources(*), category:asset_categories(*)')
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: invalidate,
+  });
 
-  const deleteAsset = async (id: string) => {
-    const supabase = createClient();
-    const { error } = await supabase.from('assets').delete().eq('id', id);
-    if (error) throw error;
-    await fetchAssets();
-  };
+  const deleteAsset = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('assets').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+  });
 
   return {
-    assets,
-    loading,
-    error,
-    refetch: fetchAssets,
-    createAsset,
-    updateAsset,
-    deleteAsset,
+    assets: query.data || [],
+    loading: query.isLoading,
+    error: query.error ? (query.error as Error).message : null,
+    refetch: query.refetch,
+    createAsset: (a: CreateAsset) => createAsset.mutateAsync(a),
+    updateAsset: (id: string, u: UpdateAsset) => updateAsset.mutateAsync({ id, updates: u }),
+    deleteAsset: (id: string) => deleteAsset.mutateAsync(id),
   };
 }
 
 export function useNetWorthBreakdown() {
-  const [breakdown, setBreakdown] = useState<NetWorthBreakdown[]>([]);
-  const [sourceBreakdown, setSourceBreakdown] = useState<Record<string, SourceBreakdown[]>>({});
-  const [totalNetWorth, setTotalNetWorth] = useState(0);
-  const [totalAssets, setTotalAssets] = useState(0);
-  const [totalCpf, setTotalCpf] = useState(0);
-  const [totalLiabilities, setTotalLiabilities] = useState(0);
-  const [totalGain, setTotalGain] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const supabase = createClient();
 
-  const fetchBreakdown = useCallback(async () => {
-    try {
-      setLoading(true);
-      const supabase = createClient();
-
-      // Fetch all assets with their categories and sources
+  const query = useQuery({
+    queryKey: assetQueryKeys.breakdown,
+    queryFn: async () => {
       const { data: assets, error } = await supabase
         .from('assets')
         .select('*, source:asset_sources(*), category:asset_categories(*)');
 
       if (error) throw error;
 
-      // Calculate breakdown by category
       const categoryTotals: Record<string, { value: number; type: string }> = {};
       const sourceTotals: Record<string, SourceBreakdown[]> = {};
 
@@ -262,42 +234,26 @@ export function useNetWorthBreakdown() {
         const categoryName = category.name;
         const categoryType = category.type;
 
-        // Prefer the cron-resolved SGD value; fall back to raw value for
-        // assets that have not been synced yet.
-        const sgdValue =
-          asset.value_sgd != null
-            ? Number(asset.value_sgd)
-            : Number(asset.current_value);
+        const sgdValue = asset.value_sgd != null ? Number(asset.value_sgd) : Number(asset.current_value);
 
-        // Category totals
         if (!categoryTotals[categoryName]) {
           categoryTotals[categoryName] = { value: 0, type: categoryType };
         }
         categoryTotals[categoryName].value += sgdValue;
 
-        // Source breakdown within category
-        if (!sourceTotals[categoryName]) {
-          sourceTotals[categoryName] = [];
-        }
+        if (!sourceTotals[categoryName]) sourceTotals[categoryName] = [];
 
         const sourceName = asset.source?.name || 'Unknown';
-        const existingSource = sourceTotals[categoryName].find(
-          (s) => s.source === sourceName
-        );
+        const existingSource = sourceTotals[categoryName].find((s) => s.source === sourceName);
 
         if (existingSource) {
           existingSource.value += sgdValue;
           existingSource.assets.push(asset);
         } else {
-          sourceTotals[categoryName].push({
-            source: sourceName,
-            value: sgdValue,
-            assets: [asset],
-          });
+          sourceTotals[categoryName].push({ source: sourceName, value: sgdValue, assets: [asset] });
         }
       });
 
-      // Convert to array format
       const breakdownArray: NetWorthBreakdown[] = Object.entries(categoryTotals).map(
         ([category, { value, type }]) => ({
           category,
@@ -307,62 +263,46 @@ export function useNetWorthBreakdown() {
         })
       );
 
-      // Calculate totals
       let assetsTotal = 0;
       let cpfTotal = 0;
       let liabilitiesTotal = 0;
 
       breakdownArray.forEach(({ type, value }) => {
-        if (type === 'liability') {
-          liabilitiesTotal += value;
-        } else if (type === 'cpf') {
-          cpfTotal += value;
-        } else {
-          assetsTotal += value;
-        }
+        if (type === 'liability') liabilitiesTotal += value;
+        else if (type === 'cpf') cpfTotal += value;
+        else assetsTotal += value;
       });
 
-      setBreakdown(breakdownArray);
-      setSourceBreakdown(sourceTotals);
-      setTotalAssets(assetsTotal);
-      setTotalCpf(cpfTotal);
-      setTotalLiabilities(liabilitiesTotal);
-      // Net worth still includes CPF
-      setTotalNetWorth(assetsTotal + cpfTotal - liabilitiesTotal);
-
-      // Total unrealized gain/loss across assets with a cost basis
       let gainTotal = 0;
       (assets || []).forEach((asset) => {
         if (asset.cost_basis != null) {
-          const sgd =
-            asset.value_sgd != null
-              ? Number(asset.value_sgd)
-              : Number(asset.current_value);
+          const sgd = asset.value_sgd != null ? Number(asset.value_sgd) : Number(asset.current_value);
           gainTotal += sgd - Number(asset.cost_basis);
         }
       });
-      setTotalGain(gainTotal);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch breakdown');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
-  useEffect(() => {
-    fetchBreakdown();
-  }, [fetchBreakdown]);
+      return {
+        breakdown: breakdownArray,
+        sourceBreakdown: sourceTotals,
+        totalNetWorth: assetsTotal + cpfTotal - liabilitiesTotal,
+        totalAssets: assetsTotal,
+        totalCpf: cpfTotal,
+        totalLiabilities: liabilitiesTotal,
+        totalGain: gainTotal,
+      };
+    },
+  });
 
   return {
-    breakdown,
-    sourceBreakdown,
-    totalNetWorth,
-    totalAssets,
-    totalCpf,
-    totalLiabilities,
-    totalGain,
-    loading,
-    error,
-    refetch: fetchBreakdown,
+    breakdown: query.data?.breakdown || [],
+    sourceBreakdown: query.data?.sourceBreakdown || {},
+    totalNetWorth: query.data?.totalNetWorth || 0,
+    totalAssets: query.data?.totalAssets || 0,
+    totalCpf: query.data?.totalCpf || 0,
+    totalLiabilities: query.data?.totalLiabilities || 0,
+    totalGain: query.data?.totalGain || 0,
+    loading: query.isLoading,
+    error: query.error ? (query.error as Error).message : null,
+    refetch: query.refetch,
   };
 }

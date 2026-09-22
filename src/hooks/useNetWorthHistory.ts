@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { format, endOfMonth, startOfMonth } from 'date-fns';
 
@@ -14,142 +14,104 @@ export interface NetWorthHistoryEntry {
 }
 
 export function useNetWorthHistory() {
-  const [history, setHistory] = useState<NetWorthHistoryEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const qc = useQueryClient();
+  const supabase = createClient();
 
-  const fetchHistory = useCallback(async () => {
-    try {
-      setLoading(true);
-      const supabase = createClient();
+  const query = useQuery({
+    queryKey: ['net-worth-history'],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('net_worth_history')
         .select('*')
         .order('snapshot_date', { ascending: true });
-
       if (error) throw error;
-      setHistory(data || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch history');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return data as NetWorthHistoryEntry[];
+    },
+  });
 
-  useEffect(() => {
-    fetchHistory();
-  }, [fetchHistory]);
+  const takeSnapshot = useMutation({
+    mutationFn: async () => {
+      const today = new Date();
+      const snapshotDate = format(today, 'yyyy-MM-dd');
 
-  const takeSnapshot = async () => {
-    const supabase = createClient();
-    
-    // Get current date (end of current month for the snapshot)
-    const today = new Date();
-    const snapshotDate = format(today, 'yyyy-MM-dd');
-    
-    // Check if snapshot for this month already exists
-    const monthStart = format(startOfMonth(today), 'yyyy-MM-dd');
-    const monthEnd = format(endOfMonth(today), 'yyyy-MM-dd');
-    
-    const { data: existing } = await supabase
-      .from('net_worth_history')
-      .select('id')
-      .gte('snapshot_date', monthStart)
-      .lte('snapshot_date', monthEnd)
-      .single();
+      const monthStart = format(startOfMonth(today), 'yyyy-MM-dd');
+      const monthEnd = format(endOfMonth(today), 'yyyy-MM-dd');
 
-    // Fetch all current assets
-    const { data: assets, error: assetsError } = await supabase
-      .from('assets')
-      .select('*, category:asset_categories(type)');
-
-    if (assetsError) throw assetsError;
-
-    // Calculate totals
-    let totalAssets = 0;
-    let totalLiabilities = 0;
-
-    (assets || []).forEach((asset) => {
-      const value =
-        asset.value_sgd != null
-          ? Number(asset.value_sgd)
-          : Number(asset.current_value);
-      if (asset.category?.type === 'liability') {
-        totalLiabilities += value;
-      } else {
-        totalAssets += value;
-      }
-    });
-
-    const netWorth = totalAssets - totalLiabilities;
-
-    if (existing) {
-      // Update existing snapshot for this month
-      const { error } = await supabase
+      const { data: existing } = await supabase
         .from('net_worth_history')
-        .update({
-          total_assets: totalAssets,
-          total_liabilities: totalLiabilities,
-          net_worth: netWorth,
-          snapshot_date: snapshotDate,
-        })
-        .eq('id', existing.id);
-
-      if (error) throw error;
-    } else {
-      // Create new snapshot
-      const { data: historyEntry, error: historyError } = await supabase
-        .from('net_worth_history')
-        .insert({
-          total_assets: totalAssets,
-          total_liabilities: totalLiabilities,
-          net_worth: netWorth,
-          snapshot_date: snapshotDate,
-        })
-        .select()
+        .select('id')
+        .gte('snapshot_date', monthStart)
+        .lte('snapshot_date', monthEnd)
         .single();
 
-      if (historyError) throw historyError;
+      const { data: assets, error: assetsError } = await supabase
+        .from('assets')
+        .select('*, category:asset_categories(type)');
 
-      // Save individual asset snapshots
-      const assetSnapshots = (assets || []).map((asset) => ({
-        history_id: historyEntry.id,
-        asset_id: asset.id,
-        value:
-          asset.value_sgd != null
-            ? Number(asset.value_sgd)
-            : Number(asset.current_value),
-      }));
+      if (assetsError) throw assetsError;
 
-      if (assetSnapshots.length > 0) {
-        const { error: snapshotsError } = await supabase
-          .from('asset_snapshots')
-          .insert(assetSnapshots);
+      let totalAssets = 0;
+      let totalLiabilities = 0;
 
-        if (snapshotsError) throw snapshotsError;
+      (assets || []).forEach((asset: {
+        id: string;
+        current_value: number;
+        value_sgd: number | null;
+        category?: { type: string } | { type: string }[] | null;
+      }) => {
+        const category = Array.isArray(asset.category) ? asset.category[0] : asset.category;
+        const value = asset.value_sgd != null ? Number(asset.value_sgd) : Number(asset.current_value);
+        if (category?.type === 'liability') totalLiabilities += value;
+        else totalAssets += value;
+      });
+
+      const netWorth = totalAssets - totalLiabilities;
+
+      if (existing) {
+        const { error } = await supabase
+          .from('net_worth_history')
+          .update({ total_assets: totalAssets, total_liabilities: totalLiabilities, net_worth: netWorth, snapshot_date: snapshotDate })
+          .eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { data: historyEntry, error: historyError } = await supabase
+          .from('net_worth_history')
+          .insert({ total_assets: totalAssets, total_liabilities: totalLiabilities, net_worth: netWorth, snapshot_date: snapshotDate })
+          .select()
+          .single();
+        if (historyError) throw historyError;
+
+        const assetSnapshots = (assets || []).map((asset: { id: string; current_value: number; value_sgd: number | null }) => ({
+          history_id: historyEntry.id,
+          asset_id: asset.id,
+          value: asset.value_sgd != null ? Number(asset.value_sgd) : Number(asset.current_value),
+        }));
+
+        if (assetSnapshots.length > 0) {
+          const { error: snapshotsError } = await supabase.from('asset_snapshots').insert(assetSnapshots);
+          if (snapshotsError) throw snapshotsError;
+        }
       }
-    }
 
-    await fetchHistory();
-  };
+      return { snapshot_date: snapshotDate };
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['net-worth-history'] }),
+  });
 
-  const deleteSnapshot = async (id: string) => {
-    const supabase = createClient();
-    const { error } = await supabase
-      .from('net_worth_history')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
-    await fetchHistory();
-  };
+  const deleteSnapshot = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('net_worth_history').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['net-worth-history'] }),
+  });
 
   return {
-    history,
-    loading,
-    error,
-    refetch: fetchHistory,
-    takeSnapshot,
-    deleteSnapshot,
+    history: query.data || [],
+    loading: query.isLoading,
+    error: query.error ? (query.error as Error).message : null,
+    refetch: query.refetch,
+    takeSnapshot: () => takeSnapshot.mutateAsync(),
+    deleteSnapshot: (id: string) => deleteSnapshot.mutateAsync(id),
   };
 }

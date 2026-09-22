@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
@@ -8,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Wallet, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
 import { navigation } from '@/lib/navigation';
+import { TransitionLink } from './TransitionLink';
 import { ThemeToggle } from './ThemeToggle';
 
 export function Sidebar() {
@@ -39,7 +39,7 @@ export function Sidebar() {
           {navigation.map((item) => {
             const isActive = pathname === item.href;
             return (
-              <Link
+              <TransitionLink
                 key={item.name}
                 href={item.href}
                 className={cn(
@@ -51,7 +51,7 @@ export function Sidebar() {
               >
                 <item.icon className={cn('h-5 w-5', isActive && 'text-terracotta')} />
                 {item.name}
-              </Link>
+              </TransitionLink>
             );
           })}
         </nav>
