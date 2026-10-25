@@ -22,7 +22,7 @@ export function QuickAddExpense() {
         onClick={() => setOpen(true)}
         size="icon-lg"
         aria-label="Add expense"
-        className="fixed bottom-24 right-4 z-50 h-14 w-14 rounded-full shadow-lg md:bottom-8 md:right-8"
+        className="fixed bottom-[calc(var(--mobile-nav-h)+var(--sab)+1rem)] right-[max(1rem,var(--sar))] z-50 h-14 w-14 rounded-full shadow-lg fold:bottom-[calc(var(--sab)+1.5rem)] fold:right-[max(1.5rem,var(--sar))] lg:bottom-8 lg:right-8"
       >
         <Plus className="h-6 w-6" />
       </Button>

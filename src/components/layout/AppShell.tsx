@@ -19,17 +19,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      {/* Desktop Sidebar - hidden on mobile */}
-      <div className="hidden md:block">
+      {/* Sidebar: compact icon rail on unfolded foldables / small tablets
+          (fold..lg), full sidebar on lg+. Hidden on phone widths. */}
+      <div className="hidden fold:block">
         <Sidebar />
       </div>
 
-      {/* Mobile Header - hidden on desktop */}
+      {/* Phone header - hidden from fold width up */}
       <MobileHeader />
 
       {/* Main Content */}
-      <main className="min-h-screen bg-background pb-24 md:ml-64 md:pb-0">
-        <div className="px-4 py-4 md:p-8">
+      <main className="min-h-dvh bg-background pb-[calc(var(--mobile-nav-h)+var(--sab)+1.5rem)] fold:ml-[calc(5rem+var(--sal))] fold:pb-[calc(var(--sab)+1.5rem)] lg:ml-[calc(16rem+var(--sal))]">
+        <div className="mx-auto w-full max-w-6xl py-4 pl-[max(1rem,var(--sal))] pr-[max(1rem,var(--sar))] fold:pt-[calc(var(--sat)+1.5rem)] fold:pl-6 fold:pr-[max(1.5rem,var(--sar))] lg:px-8 lg:pt-[calc(var(--sat)+2rem)]">
           {children}
         </div>
       </main>

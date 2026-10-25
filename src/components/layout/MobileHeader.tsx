@@ -22,17 +22,19 @@ export function MobileHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 items-center justify-between bg-sidebar text-sidebar-foreground shadow-[0_1px_3px_rgba(0,0,0,0.2)] px-4 md:hidden">
+    <header className="sticky top-0 z-40 bg-sidebar text-sidebar-foreground shadow-[0_1px_3px_rgba(0,0,0,0.2)] pt-[var(--sat)] pl-[max(1rem,var(--sal))] pr-[max(0.5rem,var(--sar))] fold:hidden">
+      <div className="flex h-14 items-center justify-between">
       <div className="flex items-center gap-2">
         <Wallet className="h-5 w-5 text-sidebar-primary" />
         <span className="font-serif font-semibold tracking-wide">Finance Tracker</span>
       </div>
 
       <div className="flex items-center gap-1">
-        <ThemeToggle className="text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground" />
-        <Button variant="ghost" size="icon" onClick={handleSignOut} className="text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground">
+        <ThemeToggle className="size-11 text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground" />
+        <Button variant="ghost" size="icon" aria-label="Sign out" onClick={handleSignOut} className="text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground size-11">
           <LogOut className="h-5 w-5" />
         </Button>
+      </div>
       </div>
     </header>
   );
