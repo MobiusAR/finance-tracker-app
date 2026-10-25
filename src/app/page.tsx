@@ -76,8 +76,8 @@ export default function Dashboard() {
       />
 
       {/* Summary Cards - 2x2 grid on mobile, 4 cols on desktop */}
-      <div className="mb-4 grid grid-cols-2 lg:grid-cols-4 gap-2 px-2 md:gap-4 md:px-0 md:mb-6">
-        <Card className="border-l-4 border-l-primary">
+      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 lg:grid-cols-5 gap-2 px-2 md:gap-4 md:px-0 md:mb-6">
+        <Card className="col-span-2 md:col-span-3 lg:col-span-1 border-l-4 border-l-primary">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
             <CardTitle className="text-[11px] sm:text-xs font-medium md:text-sm truncate mr-1">Net Worth</CardTitle>
             <Wallet className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
@@ -98,7 +98,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-sage">
+        <Card className="md:col-span-3 lg:col-span-1 border-l-4 border-l-sage">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
             <CardTitle className="text-[11px] sm:text-xs font-medium md:text-sm truncate mr-1">Assets</CardTitle>
             <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-sage shrink-0" />
@@ -122,7 +122,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4" style={{ borderLeftColor: ASSET_TYPE_COLORS.cpf }}>
+        <Card className="md:col-span-2 lg:col-span-1 border-l-4" style={{ borderLeftColor: ASSET_TYPE_COLORS.cpf }}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
             <CardTitle className="text-[11px] sm:text-xs font-medium md:text-sm truncate mr-1">CPF</CardTitle>
             <Shield className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" style={{ color: ASSET_TYPE_COLORS.cpf }} />
@@ -141,7 +141,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-destructive">
+        <Card className="md:col-span-2 lg:col-span-1 border-l-4 border-l-destructive">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
             <CardTitle className="text-[11px] sm:text-xs font-medium md:text-sm truncate mr-1">Liabilities</CardTitle>
             <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4 text-destructive shrink-0" />
@@ -160,7 +160,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-terracotta">
+        <Card className="md:col-span-2 lg:col-span-1 border-l-4 border-l-terracotta">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
             <CardTitle className="text-[11px] sm:text-xs font-medium md:text-sm truncate mr-1">Spending</CardTitle>
             <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 text-terracotta shrink-0" />

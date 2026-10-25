@@ -3,6 +3,24 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* iPhone Duo navigation modes (width/orientation based, no device sniffing):
+   rail - folded outer display (< 600px) and unfolded landscape (600-1023px,
+          wider than tall): vertical rail on the right/camera-side edge,
+          per Apple's iPhone Duo HIG.
+   bars - unfolded portrait (600-1023px, taller than wide): standard
+          horizontal top header + bottom tab bar.
+   lg   - 1024px+: full left sidebar (desktop). */
+@custom-variant rail {
+  @media (max-width: 37.4999rem), (min-width: 37.5rem) and (max-width: 63.9999rem) and (orientation: landscape) {
+    @slot;
+  }
+}
+@custom-variant bars {
+  @media (min-width: 37.5rem) and (max-width: 63.9999rem) and (orientation: portrait) {
+    @slot;
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -47,6 +65,9 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+  /* Foldable breakpoint: iPhone Duo unfolded (~626pt portrait) and small tablets.
+     Below this we use the phone layout (bottom nav); at/above it a nav rail. */
+  --breakpoint-fold: 37.5rem;
 }
 
 /* ═══════════════════════════════════════════════════
@@ -206,14 +227,54 @@
   }
 }
 
-/* Safe area support for modern phones with gesture navigation */
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
-  .safe-area-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
+/* Safe area support (viewport-fit=cover): notch / Dynamic Island, home
+   indicator and landscape side insets on iPhone (incl. iPhone Duo). */
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  /* Height of the phone bottom nav, excluding the safe-area inset */
+  --mobile-nav-h: 4.25rem;
+  /* Width of the right-side Duo rail, excluding the safe-area inset */
+  --rail-w: 3.75rem;
+}
 
-  .safe-area-top {
-    padding-top: env(safe-area-inset-top);
+.safe-area-bottom {
+  padding-bottom: var(--sab);
+}
+
+.safe-area-top {
+  padding-top: var(--sat);
+}
+
+.safe-area-x {
+  padding-left: var(--sal);
+  padding-right: var(--sar);
+}
+
+html {
+  /* Stop iOS from inflating text on rotate / fold changes */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* No rubber-band glitches revealing blank areas behind fixed bars */
+  overscroll-behavior-y: none;
+  background-color: var(--background);
+}
+
+body {
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* iOS zooms into any focused field under 16px. Keep form controls at 16px on
+   touch devices regardless of breakpoint (unfolded Duo hits md: sizes). */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea,
+  [data-slot="select-trigger"] {
+    font-size: 16px !important;
   }
 }
 

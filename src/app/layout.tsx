@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   icons: {
     icon: [{ url: "/icon-192x192.png", sizes: "192x192", type: "image/png" }],
-    apple: [{ url: "/icon-192x192.png", sizes: "192x192", type: "image/png" }],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
   appleWebApp: {
     capable: true,
@@ -45,6 +45,11 @@ export const viewport: Viewport = {
     { media: "(prefers-color-scheme: dark)", color: "#0D131F" },
   ],
   colorScheme: "light dark",
+  width: "device-width",
+  initialScale: 1,
+  // Draw edge-to-edge; header, nav and content pad themselves with
+  // env(safe-area-inset-*) so nothing sits under the notch/home indicator.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

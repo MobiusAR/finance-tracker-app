@@ -105,7 +105,7 @@ export default function SubscriptionsPage() {
             />
 
             {/* Summary Cards */}
-            <div className="mb-4 grid grid-cols-2 gap-3 sm:mb-6 sm:gap-4 md:grid-cols-3">
+            <div className="mb-4 grid grid-cols-2 gap-3 sm:mb-6 sm:gap-4 fold:grid-cols-3">
                 <Card className="border-l-4 border-l-primary">
                     <CardHeader className="p-3 pb-1 sm:p-6 sm:pb-2">
                         <CardTitle className="text-xs font-medium sm:text-sm">Monthly Burn Rate</CardTitle>
@@ -130,7 +130,7 @@ export default function SubscriptionsPage() {
                     </CardContent>
                 </Card>
 
-                <Card className="border-l-4 border-l-muted hidden md:block">
+                <Card className="border-l-4 border-l-muted hidden fold:block">
                     <CardHeader className="p-3 pb-1 sm:p-6 sm:pb-2">
                         <CardTitle className="text-xs font-medium sm:text-sm">Paused</CardTitle>
                     </CardHeader>
@@ -175,7 +175,7 @@ export default function SubscriptionsPage() {
                     </CardContent>
                 </Card>
             ) : (
-                <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
+                <div className="grid gap-3 sm:gap-4 fold:grid-cols-2">
                     {recurringTransactions.map((sub) => (
                         <Card key={sub.id} className={!sub.is_active ? 'opacity-70 border-dashed bg-muted/20' : ''}>
                             <CardHeader className="p-3 pb-2 sm:p-6 sm:pb-2">

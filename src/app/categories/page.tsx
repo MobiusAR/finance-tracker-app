@@ -234,7 +234,7 @@ export default function CategoriesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
+        <div className="grid gap-3 sm:gap-4 fold:grid-cols-2">
           {budgetStatus.map(({ category, spent, budget, remaining, percentUsed, isOverBudget }) => (
             <Card key={category.id} className={isOverBudget ? 'border border-destructive/30 bg-destructive/5' : ''}>
               <CardHeader className="p-3 pb-2 sm:p-6 sm:pb-2">
