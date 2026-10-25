@@ -22,7 +22,7 @@ export function MobileHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-sidebar text-sidebar-foreground shadow-[0_1px_3px_rgba(0,0,0,0.2)] pt-[var(--sat)] pl-[max(1rem,var(--sal))] pr-[max(0.5rem,var(--sar))] fold:hidden">
+    <header className="sticky top-0 z-40 bg-sidebar text-sidebar-foreground shadow-[0_1px_3px_rgba(0,0,0,0.2)] pt-[var(--sat)] pl-[max(1rem,var(--sal))] pr-[max(0.5rem,var(--sar))]">
       <div className="flex h-14 items-center justify-between">
       <div className="flex items-center gap-2">
         <Wallet className="h-5 w-5 text-sidebar-primary" />

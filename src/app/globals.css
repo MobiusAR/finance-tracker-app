@@ -3,6 +3,24 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* iPhone Duo navigation modes (width/orientation based, no device sniffing):
+   rail - folded outer display (< 600px) and unfolded landscape (600-1023px,
+          wider than tall): vertical rail on the right/camera-side edge,
+          per Apple's iPhone Duo HIG.
+   bars - unfolded portrait (600-1023px, taller than wide): standard
+          horizontal top header + bottom tab bar.
+   lg   - 1024px+: full left sidebar (desktop). */
+@custom-variant rail {
+  @media (max-width: 37.4999rem), (min-width: 37.5rem) and (max-width: 63.9999rem) and (orientation: landscape) {
+    @slot;
+  }
+}
+@custom-variant bars {
+  @media (min-width: 37.5rem) and (max-width: 63.9999rem) and (orientation: portrait) {
+    @slot;
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -218,6 +236,8 @@
   --sar: env(safe-area-inset-right, 0px);
   /* Height of the phone bottom nav, excluding the safe-area inset */
   --mobile-nav-h: 4.25rem;
+  /* Width of the right-side Duo rail, excluding the safe-area inset */
+  --rail-w: 3.75rem;
 }
 
 .safe-area-bottom {

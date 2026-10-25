@@ -34,7 +34,7 @@ export function MobileNav() {
   );
 
   return (
-    <nav aria-label="Main" className="fixed bottom-0 left-0 right-0 z-50 bg-sidebar shadow-[0_-1px_4px_rgba(0,0,0,0.2)] fold:hidden pb-[var(--sab)] pl-[var(--sal)] pr-[var(--sar)]">
+    <nav aria-label="Main" className="fixed bottom-0 left-0 right-0 z-50 bg-sidebar shadow-[0_-1px_4px_rgba(0,0,0,0.2)]  pb-[var(--sab)] pl-[var(--sal)] pr-[var(--sar)]">
       <div className="flex items-center justify-around">
         {mobileCoreNav.map((item) => renderItem(item, pathname === item.href))}
 
