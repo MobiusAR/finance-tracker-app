@@ -246,9 +246,15 @@
      derived arithmetically: min(inset * 100, X) is 0 when the inset is 0 and
      X for any real inset. */
   --rail-col: max(var(--sar), var(--rail-w));
-  /* Where the rail starts: below the status cluster (~120px tall) when the
+  /* 1 when a side status column exists, else 0, as a length switch:
+     --has-side-inset-8 is 8rem with a side inset and 0 without. Used to
+     collapse the rail's theme/sign-out group (moved into the page header)
+     without media-querying env(). */
+  --has-side-inset-8: min(calc(var(--sar) * 100), 8rem);
+  /* Where the rail starts: below the status cluster (Dynamic Island incl.
+     Live Activity pill + clock/wifi, ~230px tall) when the
      status column exists, else just below the top inset. */
-  --rail-top: max(var(--sat), min(calc(var(--sar) * 100), 7.5rem));
+  --rail-top: max(var(--sat), min(calc(var(--sar) * 100), 15.5rem));
   /* Keep page titles out of iOS's top scroll-edge blur band when the status
      bar has moved to the side (top inset is then ~0 but iOS still softens
      the top edge). */

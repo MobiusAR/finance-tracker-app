@@ -40,11 +40,17 @@ export function RightRail() {
       {/* Top: actions (slot 1 is the quick-add button, positioned by QuickAddExpense) */}
       <div className="pointer-events-auto flex flex-col items-center gap-2">
         <div className="size-11" aria-hidden />
+        {/* Theme + sign-out: shown here only without a side status column
+            (browser testing). With one, the column is taken by the system
+            cluster, so these collapse to 0 height and live in the page
+            header instead (see Header). */}
+        <div className="max-h-[calc(8rem-var(--has-side-inset-8))] overflow-hidden">
         <div className="flex flex-col items-center gap-1 rounded-full bg-sidebar p-1 shadow-md ring-1 ring-black/5 dark:bg-card dark:shadow-none dark:ring-white/10">
           <ThemeToggle className={cn(btn, 'h-11 w-11')} />
           <button type="button" aria-label="Sign out" onClick={handleSignOut} className={btn}>
             <LogOut className="h-[18px] w-[18px]" />
           </button>
+        </div>
         </div>
       </div>
 
