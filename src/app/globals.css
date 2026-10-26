@@ -238,6 +238,21 @@
   --mobile-nav-h: 4.25rem;
   /* Width of the right-side Duo rail, excluding the safe-area inset */
   --rail-w: 3.75rem;
+  /* iPhone Duo folded / landscape: the system status bar + Dynamic Island live
+     in a column on the right, reported as safe-area-inset-right. Native apps
+     put their side toolbar + tab bar IN that column under the status items, so
+     the rail column is max(inset, rail width) rather than inset + rail.
+     CSS can't media-query env(), so "is there a side status column?" is
+     derived arithmetically: min(inset * 100, X) is 0 when the inset is 0 and
+     X for any real inset. */
+  --rail-col: max(var(--sar), var(--rail-w));
+  /* Where the rail starts: below the status cluster (~120px tall) when the
+     status column exists, else just below the top inset. */
+  --rail-top: max(var(--sat), min(calc(var(--sar) * 100), 7.5rem));
+  /* Keep page titles out of iOS's top scroll-edge blur band when the status
+     bar has moved to the side (top inset is then ~0 but iOS still softens
+     the top edge). */
+  --rail-content-top: max(var(--sat), min(calc(var(--sar) * 100), 3.5rem));
 }
 
 .safe-area-bottom {
