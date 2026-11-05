@@ -37,6 +37,62 @@ function invalidateSpending(qc: ReturnType<typeof useQueryClient>) {
   qc.invalidateQueries({ queryKey: ['budget-surplus'] });
 }
 
+/**
+ * Recalculate frozen budget_surplus snapshots for past months touched by a
+ * transaction change (backdated add/edit/delete). Only existing snapshot rows
+ * for months before the current month are updated; missing rows are not created.
+ * Uses the same formula as the calculate-surplus cron:
+ *   surplus_amount = discretionary_allowance - total_spent + manual_adjustments
+ */
+export async function recalcPastSurplusForDates(dates: (string | null | undefined)[]) {
+  const supabase = createClient();
+  const currentMonthStr = format(startOfMonth(new Date()), 'yyyy-MM-dd');
+  const months = Array.from(
+    new Set(
+      dates
+        .filter((d): d is string => !!d)
+        .map((d) => `${d.slice(0, 7)}-01`)
+        .filter((m) => m < currentMonthStr)
+    )
+  );
+
+  for (const monthStr of months) {
+    const { data: snapshot, error: snapErr } = await supabase
+      .from('budget_surplus')
+      .select('*')
+      .eq('month', monthStr)
+      .maybeSingle();
+    if (snapErr) throw snapErr;
+    if (!snapshot) continue;
+
+    const monthDate = new Date(`${monthStr}T00:00:00`);
+    const { data: txns, error: txErr } = await supabase
+      .from('transactions')
+      .select('amount')
+      .gte('transaction_date', monthStr)
+      .lte('transaction_date', format(endOfMonth(monthDate), 'yyyy-MM-dd'));
+    if (txErr) throw txErr;
+
+    const totalSpent = Math.round((txns || []).reduce((sum, t) => sum + Number(t.amount), 0) * 100) / 100;
+    const surplusAmount =
+      Math.round(
+        (Number(snapshot.discretionary_allowance) - totalSpent + Number(snapshot.manual_adjustments || 0)) * 100
+      ) / 100;
+
+    const { error: updErr } = await supabase
+      .from('budget_surplus')
+      .update({ total_spent: totalSpent, surplus_amount: surplusAmount })
+      .eq('id', snapshot.id);
+    if (updErr) throw updErr;
+  }
+}
+
+async function getTransactionDate(id: string): Promise<string | null> {
+  const supabase = createClient();
+  const { data } = await supabase.from('transactions').select('transaction_date').eq('id', id).maybeSingle();
+  return data?.transaction_date ?? null;
+}
+
 export function useSpendingCategories() {
   const qc = useQueryClient();
   const supabase = createClient();
@@ -125,6 +181,7 @@ export function useTransactions(month?: Date) {
         .select('*, category:spending_categories(*)')
         .single();
       if (error) throw error;
+      await recalcPastSurplusForDates([data?.transaction_date]);
       return data;
     },
     onSuccess: () => invalidateSpending(qc),
@@ -132,6 +189,7 @@ export function useTransactions(month?: Date) {
 
   const updateTransaction = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: UpdateTransaction }) => {
+      const oldDate = await getTransactionDate(id);
       const { data, error } = await supabase
         .from('transactions')
         .update(updates)
@@ -139,6 +197,7 @@ export function useTransactions(month?: Date) {
         .select('*, category:spending_categories(*)')
         .single();
       if (error) throw error;
+      await recalcPastSurplusForDates([oldDate, data?.transaction_date]);
       return data;
     },
     onSuccess: () => invalidateSpending(qc),
@@ -146,8 +205,10 @@ export function useTransactions(month?: Date) {
 
   const deleteTransaction = useMutation({
     mutationFn: async (id: string) => {
+      const oldDate = await getTransactionDate(id);
       const { error } = await supabase.from('transactions').delete().eq('id', id);
       if (error) throw error;
+      await recalcPastSurplusForDates([oldDate]);
     },
     onSuccess: () => invalidateSpending(qc),
   });
@@ -511,6 +572,7 @@ export function useAddTransaction() {
         .select('*, category:spending_categories(*)')
         .single();
       if (error) throw error;
+      await recalcPastSurplusForDates([data?.transaction_date]);
       return data;
     },
     onSuccess: () => invalidateSpending(qc),
