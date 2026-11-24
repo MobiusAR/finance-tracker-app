@@ -236,6 +236,7 @@ export default function SpendingPage() {
             </Button>
             <Button
               size="sm"
+              className="rail:hidden"
               onClick={() => {
                 setEditingTransaction(null);
                 setFormOpen(true);
@@ -255,6 +256,7 @@ export default function SpendingPage() {
             </Link>
           </Button>
           <Button
+            className="rail:hidden"
             onClick={() => {
               setEditingTransaction(null);
               setFormOpen(true);

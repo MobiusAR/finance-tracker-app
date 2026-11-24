@@ -20,6 +20,12 @@
     @slot;
   }
 }
+/* Rail sits inside a wide right status column (iPhone Duo folded / landscape). */
+@custom-variant in-col {
+  html[data-rail-layout="in-column"] & {
+    @slot;
+  }
+}
 
 @theme inline {
   --color-background: var(--background);
@@ -236,29 +242,34 @@
   --sar: env(safe-area-inset-right, 0px);
   /* Height of the phone bottom nav, excluding the safe-area inset */
   --mobile-nav-h: 4.25rem;
-  /* Width of the right-side Duo rail, excluding the safe-area inset */
+  /* Fallback icon-rail width when there is no (or only a tiny) side inset. */
   --rail-w: 3.75rem;
-  /* iPhone Duo folded / landscape: the system status bar + Dynamic Island live
-     in a column on the right, reported as safe-area-inset-right. Native apps
-     put their side toolbar + tab bar IN that column under the status items, so
-     the rail column is max(inset, rail width) rather than inset + rail.
-     CSS can't media-query env(), so "is there a side status column?" is
-     derived arithmetically: min(inset * 100, X) is 0 when the inset is 0 and
-     X for any real inset. */
-  --rail-col: max(var(--sar), var(--rail-w));
-  /* 1 when a side status column exists, else 0, as a length switch:
-     --has-side-inset-8 is 8rem with a side inset and 0 without. Used to
-     collapse the rail's theme/sign-out group (moved into the page header)
-     without media-querying env(). */
-  --has-side-inset-8: min(calc(var(--sar) * 100), 8rem);
-  /* Where the rail starts: below the status cluster (Dynamic Island incl.
-     Live Activity pill + clock/wifi, ~230px tall) when the
-     status column exists, else just below the top inset. */
-  --rail-top: max(var(--sat), min(calc(var(--sar) * 100), 15.5rem));
-  /* Keep page titles out of iOS's top scroll-edge blur band when the status
-     bar has moved to the side (top inset is then ~0 but iOS still softens
-     the top edge). */
-  --rail-content-top: max(var(--sat), min(calc(var(--sar) * 100), 3.5rem));
+  /* Insets at or above this are a status column the rail lives inside.
+     The switch itself is applied in JS (data-rail-layout) because a CSS-only
+     env() comparison is not reliable in iOS Safari. */
+  --rail-col-min: 3.5rem;
+  /* Height of the iOS side status cluster (clock + wifi ring) on Duo.
+     The rail starts below this; --sat is used if the top inset is larger. */
+  --rail-status-cluster: 7.5rem;
+  /* Gap between the rail and the top/bottom of its available slot. */
+  --rail-edge-gap: 0.5rem;
+
+  /* Default / small-inset ("beside") geometry: 60px rail just inside the inset. */
+  --rail-col: var(--rail-w);
+  --rail-right: var(--sar);
+  --rail-top: var(--sat);
+  --rail-content-pr: calc(var(--rail-w) + var(--sar) + 0.5rem);
+  /* 36px rounds, shrinking if the column is narrower than that plus padding. */
+  --rail-btn: min(2.25rem, max(1.5rem, calc(var(--rail-col) - 0.5rem)));
+}
+
+/* Wide right status column (folded Duo, unfolded landscape): the rail lives
+   IN that column, under the clock/wifi, and content only clears the inset. */
+html[data-rail-layout="in-column"] {
+  --rail-col: var(--sar);
+  --rail-right: 0px;
+  --rail-top: max(var(--sat), var(--rail-status-cluster));
+  --rail-content-pr: var(--sar);
 }
 
 .safe-area-bottom {
