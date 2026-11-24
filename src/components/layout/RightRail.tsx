@@ -13,9 +13,10 @@ import { ThemeToggle } from './ThemeToggle';
  * iPhone Duo style vertical rail on the right (camera-side) edge, used on the
  * folded outer display and the unfolded display in landscape.
  *
- * Geometry is pure CSS: width is max(safe-area-inset-right, 60px) at right: 0,
- * so a wide iOS status column is filled by the rail (buttons centred under
- * the clock / wifi) and a missing inset becomes a normal 60px edge rail.
+ * Geometry comes from --rail-* tokens set by applyRailLayout: when a status
+ * column is present (inset or measured gap ≥ 44px) the rail fills that
+ * column, even if iOS has already inset the fixed containing block (a
+ * negative --rail-right pulls it in). Otherwise it is a 60px edge rail.
  */
 export function RightRail() {
   const pathname = usePathname();

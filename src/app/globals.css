@@ -249,11 +249,14 @@
   /* Gap between the rail and the top/bottom of its available slot. */
   --rail-edge-gap: 0.5rem;
 
-  /* Pure CSS geometry — no JS comparison required (iOS Safari often reports
-     0 from a JS env() probe even while CSS env() works in properties).
-     When the right inset is wide, max(inset, 60px) equals the inset and the
-     rail fills the status column at right: 0. When the inset is 0 or tiny,
-     the rail is a 60px column at the right edge. Content padding matches. */
+  /* No-JS fallback. applyRailLayout() (boot + RailLayoutSync) overwrites
+     these once it can measure the fixed containing block.
+     After black-translucent, the webview paints under the Duo status column,
+     but iOS may still treat position:fixed; right:0 as the *safe* edge
+     (left of the column). JS then sets a negative --rail-right so the rail
+     sits inside the column, width = the inset, and content padding equals
+     the inset only (or 0 if the layout viewport is already inset).
+     When the inset is 0 or below ~44px, the rail is a 60px edge column. */
   --rail-col: max(var(--sar), var(--rail-w));
   --rail-right: 0px;
   --rail-content-pr: max(var(--sar), var(--rail-w));
