@@ -39,6 +39,9 @@ export function LayoutDebug() {
     ['clientW', info.clientWidth],
     ['vv', info.visualViewportWidth != null ? `${Math.round(info.visualViewportWidth)}×${Math.round(info.visualViewportHeight ?? 0)}` : 'n/a'],
     ['screen', `${info.screenWidth}×${info.screenHeight}`],
+    ['fixed CB', `${Math.round(info.cbLeft)}–${Math.round(info.cbRight)}`],
+    ['physicalR', Math.round(info.physicalRight)],
+    ['gap', Math.round(info.gap)],
   ];
 
   return (
