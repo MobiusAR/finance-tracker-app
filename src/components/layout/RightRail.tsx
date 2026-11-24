@@ -13,10 +13,9 @@ import { ThemeToggle } from './ThemeToggle';
  * iPhone Duo style vertical rail on the right (camera-side) edge, used on the
  * folded outer display and the unfolded display in landscape.
  *
- * Geometry comes from --rail-* tokens set by applyRailLayout: when a status
- * column is present (inset or measured gap ≥ 44px) the rail fills that
- * column, even if iOS has already inset the fixed containing block (a
- * negative --rail-right pulls it in). Otherwise it is a 60px edge rail.
+ * Geometry comes from --rail-* tokens: left is calc(100vw - width) (or the
+ * same in px from applyRailLayout), width is the inset when ≥ 44px else
+ * 60px. The painted box is clamped so it never sits past the viewport.
  */
 export function RightRail() {
   const pathname = usePathname();
@@ -39,7 +38,7 @@ export function RightRail() {
   return (
     <aside
       data-rail
-      className="pointer-events-none fixed inset-y-0 right-[var(--rail-right)] z-50 flex w-[var(--rail-col)] flex-col items-center pt-[calc(var(--rail-top)+var(--rail-edge-gap))] pb-[calc(var(--sab)+var(--rail-edge-gap))]"
+      className="pointer-events-none fixed top-0 left-[var(--rail-left)] right-auto z-50 flex h-dvh max-h-[100dvh] w-[var(--rail-col)] flex-col items-center overflow-visible pt-[calc(var(--rail-top)+var(--rail-edge-gap))] pb-[calc(var(--sab)+var(--rail-edge-gap))]"
     >
       <div className="pointer-events-auto flex h-full min-h-0 w-full flex-col items-center justify-between">
         {/* Top: actions (slot 1 is the quick-add button, positioned by QuickAddExpense) */}
