@@ -236,29 +236,16 @@
   --sar: env(safe-area-inset-right, 0px);
   /* Height of the phone bottom nav, excluding the safe-area inset */
   --mobile-nav-h: 4.25rem;
-  /* Width of the right-side Duo rail, excluding the safe-area inset */
+  /* Width of the right-side Duo icon rail, excluding the safe-area inset.
+     The rail sits immediately to the left of the system status strip
+     (right: var(--sar)); it must NOT also grow by --sar, or the inset is
+     counted twice (a wide empty column and a squeezed content area). */
   --rail-w: 3.75rem;
-  /* iPhone Duo folded / landscape: the system status bar + Dynamic Island live
-     in a column on the right, reported as safe-area-inset-right. Native apps
-     put their side toolbar + tab bar IN that column under the status items, so
-     the rail column is max(inset, rail width) rather than inset + rail.
-     CSS can't media-query env(), so "is there a side status column?" is
-     derived arithmetically: min(inset * 100, X) is 0 when the inset is 0 and
-     X for any real inset. */
-  --rail-col: max(var(--sar), var(--rail-w));
-  /* 1 when a side status column exists, else 0, as a length switch:
-     --has-side-inset-8 is 8rem with a side inset and 0 without. Used to
-     collapse the rail's theme/sign-out group (moved into the page header)
-     without media-querying env(). */
-  --has-side-inset-8: min(calc(var(--sar) * 100), 8rem);
-  /* Where the rail starts: below the status cluster (Dynamic Island incl.
-     Live Activity pill + clock/wifi, ~230px tall) when the
-     status column exists, else just below the top inset. */
-  --rail-top: max(var(--sat), min(calc(var(--sar) * 100), 15.5rem));
-  /* Keep page titles out of iOS's top scroll-edge blur band when the status
-     bar has moved to the side (top inset is then ~0 but iOS still softens
-     the top edge). */
-  --rail-content-top: max(var(--sat), min(calc(var(--sar) * 100), 3.5rem));
+  /* Inner padding of the continuous rail capsule (p-1). Keep in sync with
+     the + button's top offset so it lands in the first slot. */
+  --rail-inner-pad: 0.25rem;
+  /* Gap between the viewport top/bottom safe-area and the rail capsule. */
+  --rail-edge-gap: 0.5rem;
 }
 
 .safe-area-bottom {
