@@ -37,12 +37,17 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    // "default" / "black" keep the webview below the system status bar (and,
-    // on a folded iPhone Duo, outside the right-hand status column). Only
-    // black-translucent lets the page draw under that chrome so env(safe-area-inset-*)
-    // reports the real inset and the rail can sit in the column.
+    // black-translucent is required for the page to draw under the *top*
+    // status bar. On iPhone Duo, Safari 27.1 still keeps the side control
+    // column outside the webview and only extends the page background colour
+    // into that strip (env() insets stay 0 even with viewport-fit=cover).
     statusBarStyle: "black-translucent",
     title: "Finance Tracker",
+  },
+  // Next 16 emits mobile-web-app-capable but not always the Apple-prefixed
+  // tag; both are set so a home-screen icon is unambiguously standalone.
+  other: {
+    "apple-mobile-web-app-capable": "yes",
   },
 };
 

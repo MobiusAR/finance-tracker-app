@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finance-tracker-v7';
+const CACHE_NAME = 'finance-tracker-v8';
 const PRECACHE_URLS = [
     '/offline',
     '/manifest.json',
