@@ -20,6 +20,12 @@
     @slot;
   }
 }
+/* Rail sits inside a wide right status column (iPhone Duo folded / landscape). */
+@custom-variant in-col {
+  html[data-rail-layout="in-column"] & {
+    @slot;
+  }
+}
 
 @theme inline {
   --color-background: var(--background);
@@ -236,16 +242,34 @@
   --sar: env(safe-area-inset-right, 0px);
   /* Height of the phone bottom nav, excluding the safe-area inset */
   --mobile-nav-h: 4.25rem;
-  /* Width of the right-side Duo icon rail, excluding the safe-area inset.
-     The rail sits immediately to the left of the system status strip
-     (right: var(--sar)); it must NOT also grow by --sar, or the inset is
-     counted twice (a wide empty column and a squeezed content area). */
+  /* Fallback icon-rail width when there is no (or only a tiny) side inset. */
   --rail-w: 3.75rem;
-  /* Inner padding of the continuous rail capsule (p-1). Keep in sync with
-     the + button's top offset so it lands in the first slot. */
-  --rail-inner-pad: 0.25rem;
-  /* Gap between the viewport top/bottom safe-area and the rail capsule. */
+  /* Insets at or above this are a status column the rail lives inside.
+     The switch itself is applied in JS (data-rail-layout) because a CSS-only
+     env() comparison is not reliable in iOS Safari. */
+  --rail-col-min: 3.5rem;
+  /* Height of the iOS side status cluster (clock + wifi ring) on Duo.
+     The rail starts below this; --sat is used if the top inset is larger. */
+  --rail-status-cluster: 7.5rem;
+  /* Gap between the rail and the top/bottom of its available slot. */
   --rail-edge-gap: 0.5rem;
+
+  /* Default / small-inset ("beside") geometry: 60px rail just inside the inset. */
+  --rail-col: var(--rail-w);
+  --rail-right: var(--sar);
+  --rail-top: var(--sat);
+  --rail-content-pr: calc(var(--rail-w) + var(--sar) + 0.5rem);
+  /* 36px rounds, shrinking if the column is narrower than that plus padding. */
+  --rail-btn: min(2.25rem, max(1.5rem, calc(var(--rail-col) - 0.5rem)));
+}
+
+/* Wide right status column (folded Duo, unfolded landscape): the rail lives
+   IN that column, under the clock/wifi, and content only clears the inset. */
+html[data-rail-layout="in-column"] {
+  --rail-col: var(--sar);
+  --rail-right: 0px;
+  --rail-top: max(var(--sat), var(--rail-status-cluster));
+  --rail-content-pr: var(--sar);
 }
 
 .safe-area-bottom {

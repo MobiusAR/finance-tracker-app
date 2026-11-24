@@ -4,6 +4,9 @@ import "./globals.css";
 import { AppShell } from "@/components/layout/AppShell";
 import { Toaster } from "@/components/ui/sonner";
 import { PwaRegistry } from "@/components/layout/PwaRegistry";
+import { RailLayoutSync } from "@/components/layout/RailLayoutSync";
+import { RAIL_LAYOUT_BOOT } from "@/components/layout/railLayout";
+import Script from "next/script";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { QueryProvider } from "@/components/layout/QueryProvider";
 import type { Viewport } from "next";
@@ -62,6 +65,8 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} antialiased`}
       >
+        <Script id="rail-layout-boot" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: RAIL_LAYOUT_BOOT }} />
+        <RailLayoutSync />
         <ThemeProvider>
           <QueryProvider>
             <AppShell>{children}</AppShell>
