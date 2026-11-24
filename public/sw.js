@@ -1,13 +1,11 @@
-const CACHE_NAME = 'finance-tracker-v4';
+const CACHE_NAME = 'finance-tracker-v5';
 const PRECACHE_URLS = [
-    '/',
     '/offline',
     '/manifest.json',
     '/icon-192x192.png',
     '/icon-512x512.png',
 ];
 
-// Install: precache core assets
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
@@ -16,7 +14,6 @@ self.addEventListener('install', (event) => {
     );
 });
 
-// Activate: clean up old caches
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((cacheNames) =>
@@ -29,24 +26,27 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// Fetch: network-first strategy (important for a data-driven app)
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
+});
+
+// Network-first for a data-driven app. Pages and hashed assets should come
+// from the network when online so a home-screen PWA picks up deploys.
 self.addEventListener('fetch', (event) => {
-    // Skip non-GET requests
     if (event.request.method !== 'GET') return;
 
-    // Skip API/auth requests - always go to network
     const url = new URL(event.request.url);
     if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/auth/')) {
         return;
     }
 
-    // Only handle same-origin requests
     if (url.origin !== self.location.origin) return;
 
     event.respondWith(
         fetch(event.request)
             .then((response) => {
-                // Cache successful responses
                 if (response.status === 200) {
                     const responseClone = response.clone();
                     caches.open(CACHE_NAME).then((cache) => {
@@ -56,10 +56,8 @@ self.addEventListener('fetch', (event) => {
                 return response;
             })
             .catch(() => {
-                // Fallback to cache when offline
                 return caches.match(event.request).then((cached) => {
                     if (cached) return cached;
-                    // For page navigations, fall back to the offline page
                     if (event.request.mode === 'navigate') {
                         return caches.match('/offline');
                     }

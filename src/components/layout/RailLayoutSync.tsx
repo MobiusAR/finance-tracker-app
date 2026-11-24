@@ -3,19 +3,25 @@
 import { useEffect } from 'react';
 import { applyRailLayout } from './railLayout';
 
-/** Keeps data-rail-layout in sync when the fold or orientation changes. */
+/** Re-measure insets after they settle (iOS often reports 0 at first paint). */
 export function RailLayoutSync() {
   useEffect(() => {
-    applyRailLayout();
-    const onChange = () => applyRailLayout();
-    window.addEventListener('resize', onChange);
-    window.addEventListener('orientationchange', onChange);
+    const run = () => applyRailLayout();
+    run();
+    const timers = [0, 50, 200, 500, 1000, 2000].map((ms) => window.setTimeout(run, ms));
+    window.addEventListener('load', run);
+    window.addEventListener('resize', run);
+    window.addEventListener('orientationchange', run);
     const vv = window.visualViewport;
-    vv?.addEventListener('resize', onChange);
+    vv?.addEventListener('resize', run);
+    vv?.addEventListener('scroll', run);
     return () => {
-      window.removeEventListener('resize', onChange);
-      window.removeEventListener('orientationchange', onChange);
-      vv?.removeEventListener('resize', onChange);
+      timers.forEach((id) => window.clearTimeout(id));
+      window.removeEventListener('load', run);
+      window.removeEventListener('resize', run);
+      window.removeEventListener('orientationchange', run);
+      vv?.removeEventListener('resize', run);
+      vv?.removeEventListener('scroll', run);
     };
   }, []);
   return null;

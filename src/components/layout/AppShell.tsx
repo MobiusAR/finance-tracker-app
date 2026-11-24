@@ -6,6 +6,7 @@ import { MobileNav } from './MobileNav';
 import { MobileHeader } from './MobileHeader';
 import { RightRail } from './RightRail';
 import { QuickAddExpense } from '@/components/forms/QuickAddExpense';
+import { LayoutDebug } from './LayoutDebug';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -49,6 +50,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Global quick-add expense: FAB on desktop/bars, top button of the rail in rail mode */}
       <QuickAddExpense />
+      <LayoutDebug />
     </>
   );
 }
