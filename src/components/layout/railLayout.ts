@@ -42,25 +42,77 @@ function parsePx(raw: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+type InsetSide = 'top' | 'right' | 'bottom' | 'left';
+
+const INSET_PAD: Record<InsetSide, 'paddingTop' | 'paddingRight' | 'paddingBottom' | 'paddingLeft'> = {
+  top: 'paddingTop',
+  right: 'paddingRight',
+  bottom: 'paddingBottom',
+  left: 'paddingLeft',
+};
+
+const INSET_CSS_VAR: Record<InsetSide, string> = {
+  top: '--sat',
+  right: '--sar',
+  bottom: '--sab',
+  left: '--sal',
+};
+
 /** Measure a length that uses env(safe-area-inset-*) — padding is more reliable on iOS than width. */
 function probeEnv(cssWidthOrPadding: 'width' | 'padding-right' | 'padding-top'): number {
-  const el = document.createElement('div');
-  const inset =
-    cssWidthOrPadding === 'padding-top' ? 'safe-area-inset-top' : 'safe-area-inset-right';
+  const side: InsetSide = cssWidthOrPadding === 'padding-top' ? 'top' : 'right';
   if (cssWidthOrPadding === 'width') {
-    el.style.cssText = `position:absolute;left:0;top:0;width:env(${inset},0px);height:0;visibility:hidden;pointer-events:none`;
-  } else {
-    el.style.cssText = `position:absolute;left:0;top:0;width:0;height:0;${cssWidthOrPadding}:env(${inset},0px);visibility:hidden;pointer-events:none`;
+    const el = document.createElement('div');
+    el.style.cssText = `position:absolute;left:0;top:0;width:env(safe-area-inset-right,0px);height:0;visibility:hidden;pointer-events:none`;
+    document.documentElement.appendChild(el);
+    const r = el.getBoundingClientRect();
+    const value = r.width || parsePx(getComputedStyle(el).width);
+    el.remove();
+    return value;
   }
+  return probeInsetPadding(side);
+}
+
+function probeInsetPadding(side: InsetSide): number {
+  const pad = {
+    top: 'padding-top',
+    right: 'padding-right',
+    bottom: 'padding-bottom',
+    left: 'padding-left',
+  }[side];
+  const el = document.createElement('div');
+  el.style.cssText = `position:absolute;left:0;top:0;width:0;height:0;${pad}:env(safe-area-inset-${side},0px);visibility:hidden;pointer-events:none`;
   document.documentElement.appendChild(el);
   const r = el.getBoundingClientRect();
-  const value =
-    cssWidthOrPadding === 'padding-top'
-      ? r.height || parsePx(getComputedStyle(el).paddingTop)
-      : r.width ||
-        parsePx(getComputedStyle(el)[cssWidthOrPadding === 'width' ? 'width' : 'paddingRight']);
+  const fromBox = side === 'top' || side === 'bottom' ? r.height : r.width;
+  const fromStyle = parsePx(getComputedStyle(el)[INSET_PAD[side]]);
   el.remove();
-  return value;
+  return Math.max(fromBox, fromStyle);
+}
+
+export type InsetSides = { top: number; right: number; bottom: number; left: number };
+
+export function measureAllInsets(): { padding: InsetSides; cssVar: InsetSides; used: InsetSides } {
+  const cs = getComputedStyle(document.documentElement);
+  const padding: InsetSides = {
+    top: probeInsetPadding('top'),
+    right: probeInsetPadding('right'),
+    bottom: probeInsetPadding('bottom'),
+    left: probeInsetPadding('left'),
+  };
+  const cssVar: InsetSides = {
+    top: parsePx(cs.getPropertyValue(INSET_CSS_VAR.top)),
+    right: parsePx(cs.getPropertyValue(INSET_CSS_VAR.right)),
+    bottom: parsePx(cs.getPropertyValue(INSET_CSS_VAR.bottom)),
+    left: parsePx(cs.getPropertyValue(INSET_CSS_VAR.left)),
+  };
+  const used: InsetSides = {
+    top: Math.max(padding.top, cssVar.top),
+    right: Math.max(padding.right, cssVar.right),
+    bottom: Math.max(padding.bottom, cssVar.bottom),
+    left: Math.max(padding.left, cssVar.left),
+  };
+  return { padding, cssVar, used };
 }
 
 export function measureSafeAreaRight(): InsetMeasures {
@@ -215,15 +267,23 @@ export function applyRailLayout() {
 export type LayoutDebugInfo = {
   mode: string | null;
   measures: InsetMeasures;
+  insets: InsetSides;
+  insetPad: InsetSides;
+  insetCss: InsetSides;
   innerWidth: number;
   innerHeight: number;
+  outerWidth: number;
+  outerHeight: number;
   clientWidth: number;
   visualViewportWidth: number | null;
   visualViewportHeight: number | null;
   screenWidth: number;
   screenHeight: number;
+  screenMinusInner: number;
   computed: Record<string, string>;
   displayMode: string;
+  navigatorStandalone: string;
+  viewportMeta: string;
   cbLeft: number;
   cbRight: number;
   gap: number;
@@ -244,6 +304,8 @@ export function collectLayoutDebug(): LayoutDebugInfo {
   for (const k of [
     '--sar',
     '--sat',
+    '--sab',
+    '--sal',
     '--rail-w',
     '--rail-col',
     '--rail-left',
@@ -254,22 +316,34 @@ export function collectLayoutDebug(): LayoutDebugInfo {
   ]) {
     computed[k] = cs.getPropertyValue(k).trim();
   }
+  const allInsets = measureAllInsets();
   const standalone = window.matchMedia('(display-mode: standalone)').matches;
+  const navStandalone = (navigator as Navigator & { standalone?: boolean }).standalone;
+  const viewportMeta =
+    document.querySelector('meta[name="viewport"]')?.getAttribute('content') ?? 'missing';
   const railRect = box
     ? `${Math.round(box.left)},${Math.round(box.top)} ${Math.round(box.width)}×${Math.round(box.height)} r=${Math.round(box.right)}`
     : 'none';
   return {
     mode: document.documentElement.getAttribute('data-rail-layout'),
     measures,
+    insets: allInsets.used,
+    insetPad: allInsets.padding,
+    insetCss: allInsets.cssVar,
     innerWidth: window.innerWidth,
     innerHeight: window.innerHeight,
+    outerWidth: window.outerWidth,
+    outerHeight: window.outerHeight,
     clientWidth: document.documentElement.clientWidth,
     visualViewportWidth: window.visualViewport?.width ?? null,
     visualViewportHeight: window.visualViewport?.height ?? null,
     screenWidth: window.screen.width,
     screenHeight: window.screen.height,
+    screenMinusInner: window.screen.width - window.innerWidth,
     computed,
     displayMode: standalone ? 'standalone' : 'browser',
+    navigatorStandalone: navStandalone == null ? 'n/a' : String(navStandalone),
+    viewportMeta,
     cbLeft: cb.left,
     cbRight: cb.right,
     gap: applied.geometry.gap,
