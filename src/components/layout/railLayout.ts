@@ -14,6 +14,8 @@ export type InsetMeasures = {
 
 export type FixedCB = { left: number; right: number; width: number };
 
+export type RailBox = { left: number; right: number; width: number; height: number; top: number };
+
 export type RailGeometryInput = {
   sar: number;
   sat: number;
@@ -21,21 +23,18 @@ export type RailGeometryInput = {
   viewW: number;
   viewH: number;
   clientW: number;
-  screenW: number;
-  screenH: number;
-  visualW?: number | null;
-  visualOffsetLeft?: number;
 };
 
 export type RailGeometry = {
   mode: 'in-column' | 'beside';
   col: number;
-  right: number;
+  left: number;
   contentPr: number;
   top: number;
-  physicalRight: number;
+  /** How far the fixed CB's right edge sits left of the viewport (debug). */
   gap: number;
-  trustedScreenW: number;
+  clamped: boolean;
+  fallback: boolean;
 };
 
 function parsePx(raw: string): number {
@@ -90,95 +89,127 @@ export function measureFixedCB(): FixedCB {
   return { left: r.left, right: r.right, width: r.width };
 }
 
-/**
- * On a phone, screen.width is the device CSS width and may include a status
- * column that window.innerWidth has already excluded. On a desktop, screen
- * is the monitor and must be ignored.
- */
-export function trustedScreenWidth(
-  screenW: number,
-  screenH: number,
-  viewW: number,
-  viewH: number
-): number {
-  const near = (a: number, b: number) => a >= b - 2 && a <= b + 200;
-  if (near(screenW, viewW)) return screenW;
-  const min = Math.min(screenW, screenH);
-  const max = Math.max(screenW, screenH);
-  if (viewW > viewH && near(max, viewW)) return max;
-  if (viewH >= viewW && near(min, viewW)) return min;
-  return viewW;
+export function isBoxInsideViewport(box: { left: number; right: number; width: number }, viewW: number): boolean {
+  const slop = 1;
+  return box.left >= -slop && box.right <= viewW + slop && box.width >= 8 && box.left < viewW;
 }
 
 /**
- * Work out rail box and content padding.
+ * Position the rail inside the visible viewport.
  *
- * After black-translucent, the webview can paint under the Duo status column,
- * but iOS may still treat `position: fixed; right: 0` as the *safe* edge —
- * the left of that column. Using width: max(inset, 60px) at right: 0 then
- * draws the rail beside the column. If the fixed CB already ends at the
- * column, a negative `right` pulls the rail into it. Content padding is the
- * column width only when the layout viewport still includes that region;
- * it is 0 when the layout is already inset (so we don't pad twice).
+ * Deterministic: left = viewW - col, width = col, where col is the reported
+ * inset when it is ≥ 44px, otherwise the 60px edge rail. Never uses
+ * screen.width or a measured "gap" to shift the rail to the right of
+ * innerWidth — that is what sent the rail off-screen on the Duo PWA when
+ * `position:fixed; right:0` was already the screen edge.
+ *
+ * If a measured box (getBoundingClientRect) would sit past the viewport,
+ * shift it so its right edge is at viewW, or fall back to a 60px rail at
+ * the visible right edge.
  */
 export function computeRailGeometry(input: RailGeometryInput): RailGeometry {
   const viewW = input.viewW;
-  const visualRight =
-    input.visualW != null ? input.visualW + (input.visualOffsetLeft ?? 0) : viewW;
-  const trustedScreenW = trustedScreenWidth(
-    input.screenW,
-    input.screenH,
-    viewW,
-    input.viewH
-  );
-  const physicalRight = Math.max(viewW, visualRight, trustedScreenW, input.cb.right);
-  const gap = Math.max(0, physicalRight - input.cb.right);
-  const colRaw = Math.max(input.sar, gap);
-  const inCol = colRaw >= RAIL_COL_MIN_PX;
-  const col = inCol ? colRaw : RAIL_FALLBACK_PX;
-  const right = inCol ? input.cb.right - physicalRight : 0;
-  const layoutIncludesColumn = input.clientW >= physicalRight - 1;
-  const contentPr = inCol ? (layoutIncludesColumn ? col : 0) : RAIL_FALLBACK_PX;
+  const gap = Math.max(0, viewW - input.cb.right);
+  const inCol = input.sar >= RAIL_COL_MIN_PX;
+  const col = inCol ? input.sar : RAIL_FALLBACK_PX;
+  const left = viewW - col;
+  const contentPr = inCol ? (input.clientW >= viewW - 1 ? input.sar : 0) : RAIL_FALLBACK_PX;
   const top = Math.max(input.sat, inCol ? Math.min(col * 2, RAIL_STATUS_CLUSTER_PX) : 0);
   return {
     mode: inCol ? 'in-column' : 'beside',
     col,
-    right,
+    left,
     contentPr,
     top,
-    physicalRight,
     gap,
-    trustedScreenW,
+    clamped: false,
+    fallback: false,
+  };
+}
+
+/** Pull a painted/measured rail box back into [0, viewW], or use the 60px edge fallback. */
+export function clampRailToViewport(
+  g: RailGeometry,
+  measured: { left: number; right: number; width: number },
+  viewW: number
+): RailGeometry {
+  if (isBoxInsideViewport(measured, viewW)) return g;
+
+  const shift = viewW - measured.right;
+  const shiftedLeft = g.left + shift;
+  if (
+    g.col >= 8 &&
+    shiftedLeft >= -1 &&
+    shiftedLeft + g.col <= viewW + 1 &&
+    shiftedLeft < viewW
+  ) {
+    return { ...g, left: shiftedLeft, clamped: true };
+  }
+
+  const col = Math.min(RAIL_FALLBACK_PX, Math.max(8, viewW));
+  return {
+    ...g,
+    mode: 'beside',
+    col,
+    left: Math.max(0, viewW - col),
+    contentPr: Math.max(g.contentPr, col),
+    top: g.top,
+    clamped: true,
+    fallback: true,
   };
 }
 
 function applyGeometry(g: RailGeometry) {
   const root = document.documentElement;
   root.style.setProperty('--rail-col', `${g.col}px`);
-  root.style.setProperty('--rail-right', `${g.right}px`);
+  root.style.setProperty('--rail-left', `${g.left}px`);
+  // Keep right at auto/0 so an old negative --rail-right cannot push the rail off-screen.
+  root.style.setProperty('--rail-right', '0px');
   root.style.setProperty('--rail-content-pr', `${g.contentPr}px`);
   root.style.setProperty('--rail-top', `${g.top}px`);
   root.setAttribute('data-rail-layout', g.mode);
+  if (g.fallback) root.setAttribute('data-rail-fallback', '1');
+  else root.removeAttribute('data-rail-fallback');
+}
+
+export function measureRailBox(): RailBox | null {
+  const el = document.querySelector('[data-rail]') as HTMLElement | null;
+  if (el) {
+    const r = el.getBoundingClientRect();
+    return { left: r.left, right: r.right, width: r.width, height: r.height, top: r.top };
+  }
+  const d = document.createElement('div');
+  d.style.cssText =
+    'position:fixed;top:0;left:var(--rail-left);width:var(--rail-col);height:1px;visibility:hidden;pointer-events:none';
+  document.documentElement.appendChild(d);
+  const r = d.getBoundingClientRect();
+  d.remove();
+  return { left: r.left, right: r.right, width: r.width, height: r.height, top: r.top };
 }
 
 export function applyRailLayout() {
   const { used: sar } = measureSafeAreaRight();
   const sat = measureSafeAreaTop();
   const cb = measureFixedCB();
-  const g = computeRailGeometry({
+  const viewW = window.innerWidth;
+  let g = computeRailGeometry({
     sar,
     sat,
     cb,
-    viewW: window.innerWidth,
+    viewW,
     viewH: window.innerHeight,
     clientW: document.documentElement.clientWidth,
-    screenW: window.screen.width,
-    screenH: window.screen.height,
-    visualW: window.visualViewport?.width ?? null,
-    visualOffsetLeft: window.visualViewport?.offsetLeft ?? 0,
   });
   applyGeometry(g);
-  return { used: Math.max(sar, g.gap), mode: g.mode, geometry: g };
+  const measured = measureRailBox();
+  if (measured) {
+    const clamped = clampRailToViewport(g, measured, viewW);
+    if (clamped.left !== g.left || clamped.col !== g.col || clamped.fallback) {
+      g = clamped;
+      applyGeometry(g);
+    }
+  }
+  return { used: sar, mode: g.mode, geometry: g, railBox: measureRailBox() };
 }
 
 export type LayoutDebugInfo = {
@@ -195,16 +226,19 @@ export type LayoutDebugInfo = {
   displayMode: string;
   cbLeft: number;
   cbRight: number;
-  physicalRight: number;
   gap: number;
-  railRight: number;
+  railLeft: number;
   railCol: number;
+  railRect: string;
+  clamped: boolean;
+  fallback: boolean;
 };
 
 export function collectLayoutDebug(): LayoutDebugInfo {
   const applied = applyRailLayout();
   const measures = measureSafeAreaRight();
   const cb = measureFixedCB();
+  const box = applied.railBox ?? measureRailBox();
   const cs = getComputedStyle(document.documentElement);
   const computed: Record<string, string> = {};
   for (const k of [
@@ -212,6 +246,7 @@ export function collectLayoutDebug(): LayoutDebugInfo {
     '--sat',
     '--rail-w',
     '--rail-col',
+    '--rail-left',
     '--rail-right',
     '--rail-top',
     '--rail-content-pr',
@@ -220,6 +255,9 @@ export function collectLayoutDebug(): LayoutDebugInfo {
     computed[k] = cs.getPropertyValue(k).trim();
   }
   const standalone = window.matchMedia('(display-mode: standalone)').matches;
+  const railRect = box
+    ? `${Math.round(box.left)},${Math.round(box.top)} ${Math.round(box.width)}×${Math.round(box.height)} r=${Math.round(box.right)}`
+    : 'none';
   return {
     mode: document.documentElement.getAttribute('data-rail-layout'),
     measures,
@@ -234,10 +272,12 @@ export function collectLayoutDebug(): LayoutDebugInfo {
     displayMode: standalone ? 'standalone' : 'browser',
     cbLeft: cb.left,
     cbRight: cb.right,
-    physicalRight: applied.geometry.physicalRight,
     gap: applied.geometry.gap,
-    railRight: applied.geometry.right,
+    railLeft: applied.geometry.left,
     railCol: applied.geometry.col,
+    railRect,
+    clamped: applied.geometry.clamped,
+    fallback: applied.geometry.fallback,
   };
 }
 
@@ -258,34 +298,41 @@ function measureCB(){
   d.style.cssText='position:fixed;top:0;left:0;right:0;height:0;visibility:hidden;pointer-events:none';
   document.documentElement.appendChild(d);
   var r=d.getBoundingClientRect();d.remove();
-  return {left:r.left,right:r.right,width:r.width};
+  return {left:r.left,right:r.right};
 }
 var sar=Math.max(probe('padding-right','safe-area-inset-right'),probe('width','safe-area-inset-right'),px(getComputedStyle(document.documentElement).getPropertyValue('--sar')));
 var sat=Math.max(probe('padding-top','safe-area-inset-top'),px(getComputedStyle(document.documentElement).getPropertyValue('--sat')));
 var cb=measureCB();
-var vw=window.innerWidth, vh=window.innerHeight, cw=document.documentElement.clientWidth;
-var sw=window.screen.width, sh=window.screen.height;
-var vv=window.visualViewport, visualRight=vv?(vv.width+(vv.offsetLeft||0)):vw;
-function near(a,b){return a>=b-2&&a<=b+200;}
-var tsw=sw;
-if(!near(sw,vw)){
-  var mn=Math.min(sw,sh), mx=Math.max(sw,sh);
-  if(vw>vh&&near(mx,vw)) tsw=mx;
-  else if(vh>=vw&&near(mn,vw)) tsw=mn;
-  else tsw=vw;
-}
-var physical=Math.max(vw,visualRight,tsw,cb.right);
-var gap=Math.max(0,physical-cb.right);
-var colRaw=Math.max(sar,gap);
-var inCol=colRaw>=MIN;
-var col=inCol?colRaw:FB;
-var right=inCol?cb.right-physical:0;
-var contentPr=inCol?(cw>=physical-1?col:0):FB;
+var vw=window.innerWidth, cw=document.documentElement.clientWidth;
+var inCol=sar>=MIN;
+var col=inCol?sar:FB;
+var left=vw-col;
+var contentPr=inCol?(cw>=vw-1?sar:0):FB;
 var top=Math.max(sat,inCol?Math.min(col*2,CL):0);
 var root=document.documentElement;
-root.style.setProperty('--rail-col',col+'px');
-root.style.setProperty('--rail-right',right+'px');
-root.style.setProperty('--rail-content-pr',contentPr+'px');
-root.style.setProperty('--rail-top',top+'px');
-root.setAttribute('data-rail-layout',inCol?'in-column':'beside');
+function apply(){
+  root.style.setProperty('--rail-col',col+'px');
+  root.style.setProperty('--rail-left',left+'px');
+  root.style.setProperty('--rail-right','0px');
+  root.style.setProperty('--rail-content-pr',contentPr+'px');
+  root.style.setProperty('--rail-top',top+'px');
+  root.setAttribute('data-rail-layout',inCol?'in-column':'beside');
+}
+apply();
+var probeEl=document.querySelector('[data-rail]');
+var box;
+if(probeEl){box=probeEl.getBoundingClientRect();}
+else {
+  var d=document.createElement('div');
+  d.style.cssText='position:fixed;top:0;left:var(--rail-left);width:var(--rail-col);height:1px;visibility:hidden;pointer-events:none';
+  root.appendChild(d);box=d.getBoundingClientRect();d.remove();
+}
+if(!(box.left>=-1&&box.right<=vw+1&&box.width>=8&&box.left<vw)){
+  var shift=vw-box.right;
+  var nl=left+shift;
+  if(!(col>=8&&nl>=-1&&nl+col<=vw+1&&nl<vw)){
+    col=Math.min(FB,Math.max(8,vw));left=Math.max(0,vw-col);inCol=false;contentPr=Math.max(contentPr,col);
+  } else {left=nl;}
+  apply();
+}
 }catch(e){}})();`;

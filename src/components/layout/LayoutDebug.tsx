@@ -32,7 +32,7 @@ export function LayoutDebug() {
     ['css --sar', info.computed['--sar']],
     ['used inset', Math.round(info.measures.used)],
     ['--rail-col', info.computed['--rail-col']],
-    ['--rail-right', info.computed['--rail-right']],
+    ['--rail-left', info.computed['--rail-left']],
     ['--rail-top', info.computed['--rail-top']],
     ['--rail-content-pr', info.computed['--rail-content-pr']],
     ['inner', `${info.innerWidth}×${info.innerHeight}`],
@@ -40,8 +40,10 @@ export function LayoutDebug() {
     ['vv', info.visualViewportWidth != null ? `${Math.round(info.visualViewportWidth)}×${Math.round(info.visualViewportHeight ?? 0)}` : 'n/a'],
     ['screen', `${info.screenWidth}×${info.screenHeight}`],
     ['fixed CB', `${Math.round(info.cbLeft)}–${Math.round(info.cbRight)}`],
-    ['physicalR', Math.round(info.physicalRight)],
     ['gap', Math.round(info.gap)],
+    ['rail rect', info.railRect],
+    ['clamped', info.clamped ? 'yes' : 'no'],
+    ['fallback', info.fallback ? 'yes' : 'no'],
   ];
 
   return (
