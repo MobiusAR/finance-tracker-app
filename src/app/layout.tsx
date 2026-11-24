@@ -37,7 +37,11 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    // "default" / "black" keep the webview below the system status bar (and,
+    // on a folded iPhone Duo, outside the right-hand status column). Only
+    // black-translucent lets the page draw under that chrome so env(safe-area-inset-*)
+    // reports the real inset and the rail can sit in the column.
+    statusBarStyle: "black-translucent",
     title: "Finance Tracker",
   },
 };
