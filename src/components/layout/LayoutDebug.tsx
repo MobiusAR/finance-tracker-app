@@ -44,30 +44,19 @@ export function LayoutDebug() {
 
   if (!enabled || !info) return null;
 
+  const g = info.geometry;
   const rows: [string, string | number | null][] = [
-    ['mode', info.mode],
+    ['mode', `${g.mode} (${g.side})`],
     ['display-mode', info.displayMode],
     ['nav.standalone', info.navigatorStandalone],
     ['viewport', info.viewportMeta],
     ['env T/R/B/L', `${fmtSide(info.insets.top)}/${fmtSide(info.insets.right)}/${fmtSide(info.insets.bottom)}/${fmtSide(info.insets.left)}`],
-    ['pad T/R/B/L', `${fmtSide(info.insetPad.top)}/${fmtSide(info.insetPad.right)}/${fmtSide(info.insetPad.bottom)}/${fmtSide(info.insetPad.left)}`],
-    ['css T/R/B/L', `${info.computed['--sat']}/${info.computed['--sar']}/${info.computed['--sab']}/${info.computed['--sal']}`],
-    ['used inset R', Math.round(info.measures.used)],
-    ['--rail-col', info.computed['--rail-col']],
-    ['--rail-left', info.computed['--rail-left']],
-    ['--rail-top', info.computed['--rail-top']],
-    ['--rail-content-pr', info.computed['--rail-content-pr']],
+    ['rail col/top/bottom/edge', `${g.col}/${g.top}/${g.bottom}/${g.edge}`],
+    ['offsetTop', g.offsetTop],
     ['inner', `${info.innerWidth}×${info.innerHeight}`],
     ['outer', `${info.outerWidth}×${info.outerHeight}`],
-    ['clientW', info.clientWidth],
-    ['vv', info.visualViewportWidth != null ? `${Math.round(info.visualViewportWidth)}×${Math.round(info.visualViewportHeight ?? 0)}` : 'n/a'],
     ['screen', `${info.screenWidth}×${info.screenHeight}`],
-    ['screen−inner', info.screenMinusInner],
-    ['fixed CB', `${Math.round(info.cbLeft)}–${Math.round(info.cbRight)}`],
-    ['gap', Math.round(info.gap)],
     ['rail rect', info.railRect],
-    ['clamped', info.clamped ? 'yes' : 'no'],
-    ['fallback', info.fallback ? 'yes' : 'no'],
   ];
 
   return (

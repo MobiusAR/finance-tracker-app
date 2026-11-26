@@ -39,7 +39,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Main content. Background stays full-bleed; only the inner content
           is padded away from the bars/rail and the (asymmetric) safe areas. */}
       <main className="min-h-dvh bg-background lg:ml-[calc(16rem+var(--sal))] bars:pb-[calc(var(--mobile-nav-h)+var(--sab)+1.5rem)] rail:pb-[calc(var(--sab)+1rem)]">
-        <div className="mx-auto w-full max-w-6xl px-8 py-8 lg:pt-[calc(var(--sat)+2rem)] bars:max-w-3xl bars:py-6 bars:pl-[max(1.5rem,var(--sal))] bars:pr-[max(1.5rem,var(--sar))] rail:pt-[calc(var(--sat)+1rem)] rail:pl-[max(0.75rem,var(--sal))] rail:pr-[var(--rail-content-pr)]">
+        <div className="mx-auto w-full max-w-6xl px-8 py-8 lg:pt-[calc(var(--sat)+2rem)] bars:max-w-3xl bars:py-6 bars:pl-[max(1.5rem,var(--sal))] bars:pr-[max(1.5rem,var(--sar))] rail:pt-[calc(var(--sat)+1rem)] rail:pl-[var(--rail-pl)] rail:pr-[var(--rail-pr)]">
           {children}
         </div>
       </main>

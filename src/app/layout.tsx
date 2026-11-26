@@ -8,6 +8,7 @@ import { RailLayoutSync } from "@/components/layout/RailLayoutSync";
 import { RAIL_LAYOUT_BOOT } from "@/components/layout/railLayout";
 import Script from "next/script";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
+import { ThemeColorSync } from "@/components/layout/ThemeColorSync";
 import { QueryProvider } from "@/components/layout/QueryProvider";
 import type { Viewport } from "next";
 
@@ -53,8 +54,10 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#1B263B" },
-    { media: "(prefers-color-scheme: dark)", color: "#0D131F" },
+    // Same as --background, so Safari's side column (which it fills with
+    // the page colour) and the status area read as one surface, no seam.
+    { media: "(prefers-color-scheme: light)", color: "#F5EBE0" },
+    { media: "(prefers-color-scheme: dark)", color: "#121A2A" },
   ],
   colorScheme: "light dark",
   width: "device-width",
@@ -77,6 +80,7 @@ export default function RootLayout({
         <Script id="rail-layout-boot" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: RAIL_LAYOUT_BOOT }} />
         <RailLayoutSync />
         <ThemeProvider>
+          <ThemeColorSync />
           <QueryProvider>
             <AppShell>{children}</AppShell>
             <Toaster />

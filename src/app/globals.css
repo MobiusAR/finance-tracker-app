@@ -20,9 +20,9 @@
     @slot;
   }
 }
-/* Rail sits inside a wide right status column (iPhone Duo folded / landscape). */
-@custom-variant in-col {
-  html[data-rail-layout="in-column"] & {
+/* Rail sits inside the iOS status column (Home Screen app on iPhone Duo). */
+@custom-variant strip {
+  html[data-rail-layout="strip"] & {
     @slot;
   }
 }
@@ -242,28 +242,48 @@
   --sar: env(safe-area-inset-right, 0px);
   /* Height of the phone bottom nav, excluding the safe-area inset */
   --mobile-nav-h: 4.25rem;
-  /* Fallback icon-rail width when there is no side status column. */
-  --rail-w: 3.75rem;
-  /* Height of the iOS side status cluster (clock + wifi ring) on Duo. */
-  --rail-status-cluster: 7.5rem;
-  /* Gap between the rail and the top/bottom of its available slot. */
-  --rail-edge-gap: 0.5rem;
+  /* Rail geometry (see railLayout.ts). The boot script overwrites these
+     before first paint; the values here are the no-JS inline rail. */
+  --rail-col: calc(72px + var(--sar));
+  --rail-top: calc(var(--sat) + 12px);
+  --rail-bottom: calc(var(--sab) + 12px);
+  --rail-edge: calc(var(--sar) + 11.5px);
+  /* Page padding beside the rail. */
+  --rail-pr: var(--rail-col);
+  --rail-pl: max(0.75rem, var(--sal));
+}
 
-  /* No-JS fallback. The rail is always inside the visible viewport:
-     left: calc(100vw - width), width = the inset (or 60px when inset is 0).
-     applyRailLayout() overwrites these with innerWidth-based pixel values
-     and clamps the painted box so its right edge never exceeds innerWidth.
-     A measured gap is not used to shift the rail right of the viewport. */
-  --rail-col: max(var(--sar), var(--rail-w));
-  --rail-left: calc(100vw - var(--rail-col));
-  --rail-right: 0px;
-  --rail-content-pr: max(var(--sar), var(--rail-w));
-  /* Below the clock/wifi when a side inset exists: 2× a ~63–76px inset is
-     ~126–152px, capped at 7.5rem (120px). With a 0 inset this collapses to
-     the top safe-area only. */
-  --rail-top: max(var(--sat), min(calc(var(--sar) * 2), var(--rail-status-cluster)));
-  /* 36px rounds, shrinking if the column is narrower than that plus padding. */
-  --rail-btn: min(2.25rem, max(1.5rem, calc(var(--rail-col) - 0.5rem)));
+/* Strip mode: the rail lives in iOS's column, so the page only clears the
+   insets on each side (asymmetric on the Duo: never use a shorthand). */
+html[data-rail-layout="strip"] {
+  --rail-pr: max(0.75rem, var(--sar));
+  --rail-pl: max(0.75rem, var(--sal));
+}
+
+/* Rail controls: frosted capsules in the app's own palette. */
+.rail-glass {
+  background: color-mix(in oklab, var(--card) 78%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--foreground) 9%, transparent),
+    inset 0 0 0 1px color-mix(in oklab, var(--foreground) 7%, transparent),
+    0 8px 24px -10px rgb(0 0 0 / 0.45);
+}
+.rail-primary {
+  background: linear-gradient(160deg, color-mix(in oklab, var(--terracotta) 88%, white) 0%, var(--terracotta) 55%, color-mix(in oklab, var(--terracotta) 82%, black) 100%);
+  color: #fff8f0;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.28),
+    0 10px 22px -8px color-mix(in oklab, var(--terracotta) 70%, transparent);
+}
+.rail-bubble {
+  background: color-mix(in oklab, var(--terracotta) 22%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--terracotta) 35%, transparent);
+  transition: transform 420ms cubic-bezier(0.32, 1.32, 0.5, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .rail-bubble { transition: none; }
 }
 
 .safe-area-bottom {

@@ -1,14 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TransactionForm } from '@/components/forms/TransactionForm';
 import { useSpendingCategories, useAddTransaction } from '@/hooks/useTransactions';
 import { CreateTransaction, UpdateTransaction } from '@/lib/supabase/types';
 
+/** Fired by the Duo rail's Add button, which replaces the FAB in rail layouts. */
+export const QUICK_ADD_EVENT = 'quick-add:open';
+
 export function QuickAddExpense() {
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const onOpen = () => setOpen(true);
+    window.addEventListener(QUICK_ADD_EVENT, onOpen);
+    return () => window.removeEventListener(QUICK_ADD_EVENT, onOpen);
+  }, []);
   const { categories } = useSpendingCategories();
   const addTransaction = useAddTransaction();
 
@@ -22,7 +31,7 @@ export function QuickAddExpense() {
         onClick={() => setOpen(true)}
         size="icon-lg"
         aria-label="Add expense"
-        className="fixed bottom-8 right-8 z-50 h-14 w-14 rounded-full shadow-lg bars:bottom-[calc(var(--mobile-nav-h)+var(--sab)+1rem)] bars:right-[max(1.5rem,var(--sar))] rail:bottom-auto rail:top-[calc(var(--rail-top)+var(--rail-edge-gap))] rail:left-[calc(var(--rail-left)+(var(--rail-col)-var(--rail-btn))/2)] rail:right-auto rail:h-[var(--rail-btn)] rail:w-[var(--rail-btn)] rail:z-[60] rail:shadow-none rail:ring-1 rail:ring-black/5 dark:rail:ring-white/15"
+        className="fixed bottom-8 right-8 z-50 h-14 w-14 rounded-full shadow-lg bars:bottom-[calc(var(--mobile-nav-h)+var(--sab)+1rem)] bars:right-[max(1.5rem,var(--sar))] rail:hidden"
       >
         <Plus className="h-6 w-6" />
       </Button>
